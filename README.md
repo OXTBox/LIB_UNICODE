@@ -47,9 +47,32 @@ Settled by the owner, 18 Nov 2026: ⚙ is the **Tools menu**, ✎ is the **Edito
 The iGame3D XT editor used them for level and the path tool; those get new characters
 (candidates ▤ level, ⤳ path tool, marked planned in the registry).
 
+## The library (19 Nov 2026)
+
+`livecode/lib_unicode.livecodescript`, script stack "lib_unicode". Needs nothing from the engines,
+so it runs in Vibecode3D (XT), xRay and headless alike.
+
+| Call | Gives |
+|---|---|
+| `Unicode.Char("house")` | the character for a meaning |
+| `Unicode.Meaning(c)` / `Unicode.Procedure(c)` / `Unicode.Field(c, "notes")` | a column of its line |
+| `Unicode.Code(c)` | `U+2302`, worked out from the character |
+| `Unicode.List(kind, status)` | the characters, one a line (both may be empty) |
+| `Unicode.Check()` | lines where the registry disagrees with itself (empty = good) |
+| `Unicode.Build(c, width)` | the raw mesh its procedure builds; empty + `Unicode.LastError()` when there is none yet |
+| `Unicode.Reload` / `Unicode.SetRegistry path` | read again after an edit / use another file |
+
+A mesh from `Unicode.Build` is in the engine's own format (what `Mesh.New`/`MeshBox` make), so:
+
+    Mesh.Define "house", Unicode.Build(Unicode.Char("house"), 40)
+
+**Procedures written:** `Proc.House pW, pH, pD, pRoof` (⌂): four walls, a gable roof (ridge front to
+back), a door drawn on the front; stands on y = 0, up is negative y; sizes follow the width.
+Picture: `preview/house_by_math.svg` (drawn by Python from the same numbers).
+
+Tests (no window): `python3 -I ~/projects/LIB_BIT/editor/tests/run_headless.py tests/lc_unicode_test.txt tests/lc_unicode_engine_test.txt`
+
 ## Next
 
-- `livecode/lib_unicode.livecodescript`: `Unicode.Char(meaning)`, `Unicode.Meaning(char)`,
-  `Unicode.Procedure(char)`, read from REGISTRY.tsv, so scripts never type the character itself.
-- A first procedure: ⌂ house, by math (box + roof).
 - A picker palette: drag a character into a scene, its procedure builds the object.
+- More procedures by math: car, cloud, truck, person.

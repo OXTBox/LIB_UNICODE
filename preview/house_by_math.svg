@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="320"><rect width="400" height="320" fill="#10141c"/>
+<line x1="180.4" y1="211.9" x2="311.4" y2="243.3" stroke="#78e68c" stroke-width="2"/>
+<line x1="180.4" y1="211.9" x2="88.6" y2="256.7" stroke="#78e68c" stroke-width="2"/>
+<line x1="180.4" y1="211.9" x2="180.4" y2="99.1" stroke="#78e68c" stroke-width="2"/>
+<line x1="311.4" y1="243.3" x2="219.6" y2="288.1" stroke="#78e68c" stroke-width="2"/>
+<line x1="311.4" y1="243.3" x2="311.4" y2="130.5" stroke="#78e68c" stroke-width="2"/>
+<line x1="219.6" y1="288.1" x2="88.6" y2="256.7" stroke="#78e68c" stroke-width="2"/>
+<line x1="219.6" y1="288.1" x2="219.6" y2="175.3" stroke="#78e68c" stroke-width="2"/>
+<line x1="88.6" y1="256.7" x2="88.6" y2="144.0" stroke="#78e68c" stroke-width="2"/>
+<line x1="180.4" y1="99.1" x2="88.6" y2="144.0" stroke="#78e68c" stroke-width="2"/>
+<line x1="180.4" y1="99.1" x2="245.9" y2="39.6" stroke="#78e68c" stroke-width="2"/>
+<line x1="311.4" y1="130.5" x2="219.6" y2="175.3" stroke="#78e68c" stroke-width="2"/>
+<line x1="311.4" y1="130.5" x2="245.9" y2="39.6" stroke="#78e68c" stroke-width="2"/>
+<line x1="219.6" y1="175.3" x2="154.1" y2="84.5" stroke="#78e68c" stroke-width="2"/>
+<line x1="88.6" y1="144.0" x2="154.1" y2="84.5" stroke="#78e68c" stroke-width="2"/>
+<line x1="245.9" y1="39.6" x2="154.1" y2="84.5" stroke="#78e68c" stroke-width="2"/>
+<line x1="230.0" y1="223.4" x2="230.0" y2="148.3" stroke="#78e68c" stroke-width="2"/>
+<line x1="230.0" y1="148.3" x2="262.7" y2="156.1" stroke="#78e68c" stroke-width="2"/>
+<line x1="262.7" y1="156.1" x2="262.7" y2="231.3" stroke="#78e68c" stroke-width="2"/>
+<text x="12" y="24" fill="#aab" font-family="sans-serif" font-size="14">&#x2302; Proc.House(40): 14 points, 7 faces, 18 lines</text></svg>

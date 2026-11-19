@@ -28,7 +28,7 @@ char	code	name	meaning	kind	procedure	used_in	status	notes
 ✔	U+2714	HEAVY CHECK MARK	done	mark		LIB_ARRAY	used	
 ⚠	U+26A0	WARNING SIGN	warning	mark		LIB_ARRAY	used	
 −	U+2212	MINUS SIGN	minus (GLAZE's answer to 'Give me a tick')	mark		LIB_GAD	used	PROMPT & GLAZE lore; also a GAD minus
- 	U+0020	SPACE	em space: PROMPT's default tool/key	entity			planned	U+2003, PROMPT & GLAZE lore (LIB_LLMIN note)
+ 	U+2003	EM SPACE	em space: PROMPT's default tool/key	entity			planned	PROMPT & GLAZE lore (LIB_LLMIN note); was saved as a plain space (U+0020) until 19 Nov
 #	U+0023	NUMBER SIGN	hash: what PROMPT says when frustrated	mark			planned	PROMPT & GLAZE lore
 ▤	U+25A4	SQUARE WITH HORIZONTAL FILL	level (iGame3D XT editor)	tool			planned	candidate, replaces ⚙ there; owner to confirm
 ⤳	U+2933	WAVE ARROW POINTING DIRECTLY RIGHT	path tool (iGame3D XT editor)	tool			planned	candidate, replaces ✎ there; owner to confirm

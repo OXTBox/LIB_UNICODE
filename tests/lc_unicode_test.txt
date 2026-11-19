@@ -1,0 +1,29 @@
+if there is a stack "lib_unicode" then
+  stop using stack "lib_unicode"
+  delete stack "lib_unicode"
+end if
+put "//wsl$/Ubuntu/home/igame3d/projects/LIB_UNICODE/" into tDir
+start using stack (tDir & "livecode/lib_unicode.livecodescript")
+put empty into tLog
+put "folder: " & (Unicode.Folder() & "/" is tDir or Unicode.Folder() & "/" is "/home/igame3d/projects/LIB_UNICODE/") & return after tLog
+put Unicode.Char("house") into tHouse
+put "house char: " & (Unicode.Code(tHouse) is "U+2302") & return after tLog
+put "gear = tools menu: " & (Unicode.Code(Unicode.Char("tools menu")) is "U+2699") & return after tLog
+put "pencil = editor: " & (Unicode.Meaning(numToCodepoint(baseConvert("270E", 16, 10))) is "editor") & return after tLog
+put "procedure: " & (Unicode.Procedure(tHouse) is "Proc.House") & return after tLog
+put "astral code (car): " & (Unicode.Code(Unicode.Char("car")) is "U+1F697") & return after tLog
+put "unknown char: " & (Unicode.Meaning("Q") is empty) & return after tLog
+put "entities: " & (the number of lines of Unicode.List("entity") >= 6) & return after tLog
+put "registry self-check empty: " & (Unicode.Check() is empty) & return after tLog
+put Unicode.Check() into tBad
+if tBad is not empty then put tBad & return after tLog
+put Unicode.Build(tHouse, 40) into tM
+put "house 14 points: " & (tM["count"] is 14) & return after tLog
+put "house 7 faces: " & (the number of lines of tM["faces"] is 7) & return after tLog
+put "house 3 door lines: " & (the number of lines of tM["lines"] is 3) & return after tLog
+put "ridge at -50 (30 walls + 20 roof): " & (tM["vy"][9] is -50) & return after tLog
+put Proc.House() into tD
+put "default size: " & (tD["count"] is 14 and tD["vx"][2] is 20) & return after tLog
+put "car planned, gives empty: " & (Unicode.Build(Unicode.Char("car")) is empty and Unicode.LastError() contains "planned") & return after tLog
+put "tool, no procedure: " & (Unicode.Build(Unicode.Char("tools menu")) is empty and Unicode.LastError() contains "no procedure") & return after tLog
+return tLog

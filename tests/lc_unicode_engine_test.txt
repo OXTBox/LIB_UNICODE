@@ -1,0 +1,19 @@
+-- the house through Engine 1 (pure xTalk Vibecode3D): Mesh.Finalize counts its edges
+repeat for each item tS in "lib_unicode,vibe_engine_for_unicode_test"
+  if there is a stack tS then
+    stop using stack tS
+    delete stack tS
+  end if
+end repeat
+start using stack "//wsl$/Ubuntu/home/igame3d/projects/LIB_UNICODE/livecode/lib_unicode.livecodescript"
+create stack "vibe_engine_for_unicode_test"
+set the script of stack "vibe_engine_for_unicode_test" to url ("binfile:/home/igame3d/projects/Vibecode3D/livecode/VIBECODE3D_LIB_MCP_11_11_2026_647PM.livecodescript")
+if the result is not empty then return "FAIL engine compile: " & the result
+start using stack "vibe_engine_for_unicode_test"
+put empty into tLog
+put Mesh.Finalize(Unicode.Build(Unicode.Char("house"), 40)) into tM
+put "edges 15 + 3 door lines = 18: " & (tM["edgeCount"] is 18) && tM["edgeCount"] & return after tLog
+put "radius: " & round(tM["radius"], 2) & return after tLog
+put Mesh.Merge(Unicode.Build(Unicode.Char("house"), 40), Mesh.Transform(Unicode.Build(Unicode.Char("house"), 20), 0, 0, 0, 40, 0, 0, 1)) into tTwo
+put "two houses merged, 28 points: " & (tTwo["count"] is 28) & return after tLog
+return tLog
