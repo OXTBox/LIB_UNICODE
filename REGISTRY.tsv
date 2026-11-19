@@ -1,0 +1,32 @@
+# LIB_UNICODE registry: one character a line. See README.md. First pass 18 Nov 2026 from a scan of our LIBs.
+char	code	name	meaning	kind	procedure	used_in	status	notes
+⌂	U+2302	HOUSE	house	entity	Proc.House		planned	owner's example; BMP choice (emoji 🏠 U+1F3E0 as second choice)
+🚗	U+1F697	AUTOMOBILE	car	entity	Proc.Car		planned	owner's example; no car in the BMP (⛟ U+26DF is a truck)
+⛟	U+26DF	BLACK TRUCK	truck	entity	Proc.Truck		planned	
+웃	U+C6C3	HANGUL SYLLABLE US	person	entity	Proc.Person		planned	owner's example; Hangul syllable often used as a stick person; alternative 🧍 U+1F9CD; LIB_MOCAP stick figures
+☁	U+2601	CLOUD	cloud	entity	Proc.Cloud		planned	
+⛈	U+26C8	THUNDER CLOUD AND RAIN	storm cloud	entity	Proc.StormCloud		planned	owner's example (thunder cloud and rain)
+☀	U+2600	BLACK SUN WITH RAYS	light	tool		LIB_ig3d	used	MAIN_UI_REUSE: light tool (lights.png); could double as sun entity
+⚙	U+2699	GEAR	tools menu	tool		LIB_TOOLBAR,LIB_GUI,LIB_RAYGUI,LIB_ig3d	clash	LIB_ig3d uses it for level (console)
+✎	U+270E	LOWER RIGHT PENCIL	editor	tool		LIB_TOOLBAR,LIB_ig3d	clash	LIB_ig3d uses it for the path tool
+☑	U+2611	BALLOT BOX WITH CHECK	status browser (review)	tool		LIB_TOOLBAR,LIB_RAYGUI	used	
+★	U+2605	BLACK STAR	latest files to review	tool		LIB_TOOLBAR	used	
+✉	U+2709	ENVELOPE	tell Claude	tool		LIB_TOOLBAR	used	
+⚡	U+26A1	HIGH VOLTAGE SIGN	Spark	tool		LIB_TOOLBAR	used	
+❐	U+2750	UPPER RIGHT DROP-SHADOWED WHITE SQUARE	windows / stacks	tool		LIB_TOOLBAR,LIB_ig3d	used	same meaning in both
+▶	U+25B6	BLACK RIGHT-POINTING TRIANGLE	play / run	tool		LIB_GUI,LIB_RAYGUI,LIB_SFX,LIB_TOOLBAR,LIB_GAD,LIB_ig3d	used	
+☺	U+263A	WHITE SMILING FACE	objects	tool		LIB_ig3d	used	MAIN_UI_REUSE (32x32zombie3.png)
+◎	U+25CE	BULLSEYE	camera	tool		LIB_ig3d	used	MAIN_UI_REUSE (meshView.png)
+⇢	U+21E2	RIGHTWARDS DASHED ARROW	path select	tool		LIB_ig3d	used	
+▦	U+25A6	SQUARE WITH ORTHOGONAL CROSSHATCH FILL	select mesh	tool		LIB_ig3d	used	
+•	U+2022	BULLET	vertex	tool		LIB_ig3d	used	
+╱	U+2571	BOX DRAWINGS LIGHT DIAGONAL UPPER RIGHT TO LOWER LEFT	line	tool		LIB_ig3d	used	
+✂	U+2702	BLACK SCISSORS	disconnect	tool		LIB_ig3d	used	
+⋔	U+22D4	PITCHFORK	split	tool		LIB_ig3d	used	
+♪	U+266A	EIGHTH NOTE	sounds	tool		LIB_ig3d	used	
+→	U+2192	RIGHTWARDS ARROW	arrow in text (leads to)	mark		many (docs)	used	
+✔	U+2714	HEAVY CHECK MARK	done	mark		LIB_ARRAY	used	
+⚠	U+26A0	WARNING SIGN	warning	mark		LIB_ARRAY	used	
+−	U+2212	MINUS SIGN	minus (GLAZE's answer to 'Give me a tick')	mark		LIB_GAD	used	PROMPT & GLAZE lore; also a GAD minus
+ 	U+0020	SPACE	em space: PROMPT's default tool/key	entity			planned	U+2003, PROMPT & GLAZE lore (LIB_LLMIN note)
+#	U+0023	NUMBER SIGN	hash: what PROMPT says when frustrated	mark			planned	PROMPT & GLAZE lore
