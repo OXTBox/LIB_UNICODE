@@ -41,12 +41,11 @@ Tab-separated, one character a line. Lines starting with `#` are comments.
   Symbols, Weather...) are ready-made lists of things to generate.
 - Easiest by math first: the first procedures should be simple shapes built in code.
 
-## Clashes (owner to pick)
+## Clashes
 
-| Char | Meaning A | Meaning B |
-|---|---|---|
-| ⚙ U+2699 | LIB_TOOLBAR: Tools menu | LIB_ig3d MAIN_UI_REUSE: level (console) |
-| ✎ U+270E | LIB_TOOLBAR: Editor (iGame3D XT) | LIB_ig3d MAIN_UI_REUSE: path tool |
+Settled by the owner, 18 Nov 2026: ⚙ is the **Tools menu**, ✎ is the **Editor button**.
+The iGame3D XT editor used them for level and the path tool; those get new characters
+(candidates ▤ level, ⤳ path tool, marked planned in the registry).
 
 ## Next
 
