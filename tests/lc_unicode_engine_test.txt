@@ -16,7 +16,7 @@ put "edges 15 + 3 door lines = 18: " & (tM["edgeCount"] is 18) && tM["edgeCount"
 put "radius: " & round(tM["radius"], 2) & return after tLog
 put Mesh.Merge(Unicode.Build(Unicode.Char("house"), 40), Mesh.Transform(Unicode.Build(Unicode.Char("house"), 20), 0, 0, 0, 40, 0, 0, 1)) into tTwo
 put "two houses merged, 28 points: " & (tTwo["count"] is 28) & return after tLog
-repeat for each item tWhat in "car,truck,cloud,storm cloud"
+repeat for each item tWhat in "car,truck,cloud,storm cloud,person"
   put Mesh.Finalize(Unicode.Build(Unicode.Char(tWhat), 40)) into tM
   Mesh.CullTables tM
   put tWhat & ": edges" && tM["edgeCount"] & ", closed " & tM["closed"] & ", radius " & round(tM["radius"], 1) & return after tLog

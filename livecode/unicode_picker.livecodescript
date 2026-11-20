@@ -8,14 +8,17 @@ script "unicode_picker"
 ##   Tools, Marks   a click copies the character to the clipboard (for button labels).
 ##   S M L      the size it is built at (its width: 20, 40, 80).
 ##   Take back  removes the last thing dropped.
+##   Moves      what a dropped person (웃) does: stands, walks or runs in a ring round the
+##              spot, waves, or dances (a LIB_MOCAP clip, when the library has it). People
+##              move on their own; a paused game (Escape) holds them still.
 ## Game windows = the Game Player's "Play <Game>" stacks (HOWTO's Run, GAME_Browser, GL.Open)
-## in this same program. Engine 1 (Vibecode3D, XT) only: an xt3d window draws with raylib's
+## in this same program; people need the Game Player's engine (Entity.SetMesh). Engine 1 (Vibecode3D, XT) only: an xt3d window draws with raylib's
 ## own camera, so a drop there would land in the wrong spot (later).
 ## The stack holds no characters: Picker.Build makes the controls, Picker.Fill the grid.
 ######################################################################################
 
 constant kFallbackFolder = "//wsl$/Ubuntu/home/igame3d/projects/LIB_UNICODE/livecode"
-constant kLayout = 2
+constant kLayout = 3
 constant kCols = 6
 constant kCell = 40
 constant kGap = 4
@@ -34,6 +37,14 @@ constant kOn = "60,110,160"
 local sKind        -- the tab shown: entity, tool, mark
 local sSize        -- the width things are built at
 local sDropped     -- what was dropped, one "stack<tab>id" a line, newest last
+local sMoves       -- what a dropped person does: stand, walk, run, wave, dance
+local sPeople      -- sPeople[id]: stack, mesh (prefix), frames, fps, x, z, ring, speed, t
+local sAnimMsg     -- the pending Picker.Animate message
+local sAnimLast    -- the milliseconds at the last Picker.Animate
+local sPersonInfo  -- sPersonInfo[prefix] = frames & tab & fps & tab & stride of meshes made
+
+constant kAnimMS = 66
+constant kDanceClip = "FreeBVH_DANCE"
 
 -------------------------------------------------------------------- open / close
 
@@ -44,6 +55,7 @@ on preOpenStack
    set the topLeft of me to 200, 32
    if sKind is empty then put "entity" into sKind
    if sSize is not a number then put 40 into sSize
+   if sMoves is empty then put "walk" into sMoves
    Picker.Fill sKind
    Picker.ShowSize
    Picker.Status "Drag a character into a game window."
@@ -56,12 +68,14 @@ end openStack
 
 -- LIB_ALPHA 12b: closing frees the stack (and its ghost window)
 on closeStackRequest
+   Picker.StopAnimate
    Picker.KillGhost
    set the destroyStack of me to true
    pass closeStackRequest
 end closeStackRequest
 
 on closeStack
+   Picker.StopAnimate
    Picker.KillGhost
    pass closeStack
 end closeStack
@@ -140,6 +154,9 @@ on mouseUp pButton
          break
       case "TakeBack"
          Picker.TakeBack
+         break
+      case "Moves"
+         Picker.NextMoves
          break
       default
          pass mouseUp
@@ -221,6 +238,10 @@ command Picker.DropIn pStack, pChar, pX, pY
    global gMeshCache
    local tWas, tMesh, tBuilt, tP, tId, tErr
    put the defaultStack into tWas
+   if Unicode.Procedure(pChar) is "Proc.Person" then
+      Picker.DropPerson pStack, pChar, pX, pY
+      exit Picker.DropIn
+   end if
    set the defaultStack to pStack
    try
       put "uni_" & char 3 to -1 of Unicode.Code(pChar) & "_" & sSize into tMesh
@@ -247,6 +268,196 @@ command Picker.DropIn pStack, pChar, pX, pY
    Picker.Status pChar && Unicode.Meaning(pChar) && "at" && round(item 1 of tP) & "," && round(item 3 of tP) && "in" && Picker.WindowName(pStack) & "."
 end Picker.DropIn
 
+-------------------------------------------------------------------- people (웃)
+
+-- the meshes for a person doing sMoves at sSize, made once a window: "<prefix>.1" .. ".n".
+-- Gives prefix & tab & frames & tab & fps & tab & stride (empty when it could not be made).
+function Picker.PersonMeshes pMoves
+   global gMeshCache
+   local tPrefix, tF, i, tClip, tH
+   put sSize * 0.4 into tH
+   put "uni_person_" & pMoves & "_" & sSize into tPrefix
+   if sPersonInfo[tPrefix] is not empty and gMeshCache[tPrefix & ".1"]["count"] is not empty then
+      return tPrefix & tab & sPersonInfo[tPrefix]
+   end if
+   if pMoves is "dance" then
+      put Picker.ClipFile(kDanceClip) into tClip
+      if tClip is empty then return empty
+      put Person.FromClip(url ("file:" & tClip), tH, 120, 2) into tF
+   else
+      put Person.Frames(pMoves, tH, 12) into tF
+   end if
+   if tF["frames"] < 1 then return empty
+   repeat with i = 1 to tF["frames"]
+      Mesh.Define tPrefix & "." & i, tF[i]
+   end repeat
+   put tF["frames"] & tab & tF["fps"] & tab & Person.Stride(pMoves, tH) into sPersonInfo[tPrefix]
+   return tPrefix & tab & sPersonInfo[tPrefix]
+end Picker.PersonMeshes
+
+-- a LIB_MOCAP stick clip next to this LIB (empty when the library does not have it)
+function Picker.ClipFile pName
+   local tPath
+   put Picker.Folder() into tPath
+   set the itemDel to "/"
+   put item 1 to -3 of tPath & "/LIB_MOCAP/library/" & pName & "/" & pName & "_stick.txt" into tPath
+   if there is a file tPath then return tPath
+   return empty
+end Picker.ClipFile
+
+command Picker.DropPerson pStack, pChar, pX, pY
+   local tWas, tInfo, tP, tId, tErr, tRing, tPrefix, tFrames, tFPS, tStride
+   put the defaultStack into tWas
+   set the defaultStack to pStack
+   try
+      Picker.Status "Making the person's frames..."
+      put Picker.PersonMeshes(sMoves) into tInfo
+      if tInfo is empty then
+         set the defaultStack to tWas
+         Picker.Status "No" && kDanceClip && "clip in LIB_MOCAP/library: pick other moves."
+         exit Picker.DropPerson
+      end if
+      set the itemDel to tab
+      put item 1 of tInfo into tPrefix
+      put item 2 of tInfo into tFrames
+      put item 3 of tInfo into tFPS
+      put item 4 of tInfo into tStride
+      set the itemDel to comma
+      put Picker.GroundAt(pX, pY) into tP
+      put sSize * 0.4 * 1.5 into tRing
+      put Entity.Spawn(tPrefix & ".1", item 1 of tP, item 2 of tP, item 3 of tP, Picker.Colour(Unicode.Meaning(pChar))) into tId
+      put pStack into sPeople[tId]["stack"]
+      put tPrefix into sPeople[tId]["mesh"]
+      put tFrames into sPeople[tId]["frames"]
+      put tFPS into sPeople[tId]["fps"]
+      -- walkers go round a ring (centre = the spot) at the speed their feet carry them
+      put 0 into sPeople[tId]["speed"]
+      if tStride > 0 then put tStride * tFPS / tFrames into sPeople[tId]["speed"]
+      put item 1 of tP into sPeople[tId]["x"]
+      put item 3 of tP into sPeople[tId]["z"]
+      put tRing into sPeople[tId]["ring"]
+      put 0 into sPeople[tId]["t"]
+      put pStack & tab & tId & return after sDropped
+      Picker.PlacePerson tId
+      dispatch "Player.Draw" to stack pStack
+   catch tErr
+      set the defaultStack to tWas
+      Picker.Status "Could not drop the person:" && line 1 of tErr
+      exit Picker.DropPerson
+   end try
+   set the defaultStack to tWas
+   Picker.Status pChar && "a person (" & Picker.MovesWord(sMoves) & ") in" && Picker.WindowName(pStack) & "."
+   Picker.StartAnimate
+end Picker.DropPerson
+
+-- frame, place and heading of person pId after its own time t (seconds); the default stack
+-- must be its window. A walker's angle round the ring is distance / radius; it faces along
+-- the ring (the figure faces -z, so heading (dx,dz) is the turn atan2(-dx, -dz)).
+command Picker.PlacePerson pId
+   local tN, tA, tX, tZ, tR
+   put trunc(sPeople[pId]["t"] * sPeople[pId]["fps"]) mod sPeople[pId]["frames"] + 1 into tN
+   Entity.SetMesh pId, sPeople[pId]["mesh"] & "." & tN
+   if sPeople[pId]["speed"] > 0 then
+      put sPeople[pId]["ring"] into tR
+      put sPeople[pId]["speed"] * sPeople[pId]["t"] / tR into tA
+      put sPeople[pId]["x"] + tR * cos(tA) into tX
+      put sPeople[pId]["z"] + tR * sin(tA) into tZ
+      Entity.SetPosition pId, tX, 0, tZ
+      -- going round: the way ahead is (-sin a, cos a)
+      Entity.SetRotation pId, 0, atan2(sin(tA), -cos(tA)), 0
+   end if
+end Picker.PlacePerson
+
+command Picker.StartAnimate
+   if sAnimMsg is not empty then exit Picker.StartAnimate
+   put the milliseconds into sAnimLast
+   send "Picker.Animate" to me in kAnimMS milliseconds
+   put the result into sAnimMsg
+end Picker.StartAnimate
+
+command Picker.StopAnimate
+   if sAnimMsg is not empty then cancel sAnimMsg
+   put empty into sAnimMsg
+end Picker.StopAnimate
+
+-- every person a step on; a window whose own game loop is not drawing (stopped, still) is
+-- drawn from here. A paused game holds its people still. Stops when nobody is left.
+on Picker.Animate
+   global bPaused, bStill
+   local tId, tStack, tDT, tWas, tErr, tDraw, tS, tLeft
+   put empty into sAnimMsg
+   put (the milliseconds - sAnimLast) / 1000 into tDT
+   put the milliseconds into sAnimLast
+   if bPaused is true then
+      Picker.StartAnimate
+      exit Picker.Animate
+   end if
+   put the defaultStack into tWas
+   put 0 into tLeft
+   repeat for each key tId in sPeople
+      put sPeople[tId]["stack"] into tStack
+      if there is not a stack tStack or the mode of stack tStack is 0 then
+         delete variable sPeople[tId]
+         next repeat
+      end if
+      set the defaultStack to tStack
+      try
+         if not Entity.Exists(tId) then
+            delete variable sPeople[tId]
+            next repeat
+         end if
+         add min(tDT, 0.25) to sPeople[tId]["t"]
+         Picker.PlacePerson tId
+         add 1 to tLeft
+         if tStack is not among the lines of tDraw then put tStack & return after tDraw
+      catch tErr
+         delete variable sPeople[tId]
+      end try
+   end repeat
+   if tWas is not empty and there is a stack tWas then set the defaultStack to tWas
+   repeat for each line tS in tDraw
+      if not Picker.GameDraws(tS) then dispatch "Player.Draw" to stack tS
+   end repeat
+   if tLeft > 0 then Picker.StartAnimate
+end Picker.Animate
+
+-- true when a window's own game loop draws it (a tick is waiting and the game is not still)
+function Picker.GameDraws pStack
+   global bStill
+   if bStill is true then return false
+   return the pendingMessages contains ("Player.Tick," & the long id of stack pStack)
+end Picker.GameDraws
+
+command Picker.NextMoves
+   local tAll, n
+   put "stand,walk,run,wave" into tAll
+   if Picker.ClipFile(kDanceClip) is not empty then put ",dance" after tAll
+   put itemOffset(sMoves, tAll) into n
+   put item (n mod the number of items of tAll) + 1 of tAll into sMoves
+   Picker.ShowMoves
+   Picker.Status "A dropped person" && Picker.MovesWord(sMoves) & "."
+end Picker.NextMoves
+
+command Picker.ShowMoves
+   if there is a button "Moves" of card 1 of me then set the label of button "Moves" of card 1 of me to Picker.MovesWord(sMoves)
+end Picker.ShowMoves
+
+function Picker.MovesWord pMoves
+   switch pMoves
+      case "stand"
+         return "stands"
+      case "walk"
+         return "walks round"
+      case "run"
+         return "runs round"
+      case "wave"
+         return "waves"
+      case "dance"
+         return "dances"
+   end switch
+   return pMoves
+end Picker.MovesWord
+
 -- remove the last thing dropped (when its window is still open)
 command Picker.TakeBack
    local tLine, tWas
@@ -257,6 +468,7 @@ command Picker.TakeBack
       if there is a stack (item 1 of tLine) and the mode of stack (item 1 of tLine) is not 0 then
          put the defaultStack into tWas
          set the defaultStack to item 1 of tLine
+         delete variable sPeople[item 2 of tLine]
          Entity.Kill item 2 of tLine
          dispatch "Player.Draw" to stack (item 1 of tLine)
          set the defaultStack to tWas
@@ -445,6 +657,12 @@ command Picker.Build
    Picker.Button "SizeM", "M", 0, 0, 30, 22
    Picker.Button "SizeL", "L", 0, 0, 30, 22
    Picker.Button "TakeBack", "Take back", 0, 0, 84, 22
+   Picker.Field "MovesLabel", kPad, 0, kPad + 64, 22
+   set the backgroundColor of field "MovesLabel" of card 1 of me to kPaper
+   set the textColor of field "MovesLabel" of card 1 of me to kDim
+   set the text of field "MovesLabel" of card 1 of me to "웃 moves"
+   Picker.Button "Moves", "walks", 0, 0, 100, 22
+   set the tooltip of button "Moves" of card 1 of me to "What a dropped person does (click for the next)"
    Picker.Field "Status", kPad, 0, tW - kPad, 34
    set the backgroundColor of field "Status" of card 1 of me to kPaper
    set the textColor of field "Status" of card 1 of me to kDim
@@ -497,6 +715,12 @@ command Picker.Fill pKind
    set the topLeft of button "SizeL" of card 1 of me to kPad + 40 + 68, y
    set the topRight of button "TakeBack" of card 1 of me to tW - kPad, y
    add 22 + kGap to y
+   if pKind is "entity" then
+      set the topLeft of field "MovesLabel" of card 1 of me to kPad, y
+      set the topLeft of button "Moves" of card 1 of me to kPad + 68, y
+      Picker.ShowMoves
+      add 22 + kGap to y
+   end if
    set the topLeft of field "Status" of card 1 of me to kPad, y
    set the height of me to y + 34 + kPad
    repeat for each item tName in "TabEntity,TabTool,TabMark"
@@ -516,7 +740,7 @@ command Picker.Fill pKind
          set the visible of button "TakeBack" of card 1 of me to false
          break
    end switch
-   repeat for each item tName in "SizeLabel,SizeS,SizeM,SizeL"
+   repeat for each item tName in "SizeLabel,SizeS,SizeM,SizeL,MovesLabel,Moves"
       set the visible of control tName of card 1 of me to (pKind is "entity")
    end repeat
    set the text of field "Info" of card 1 of me to empty

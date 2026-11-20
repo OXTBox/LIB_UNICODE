@@ -3,7 +3,7 @@ char	code	name	meaning	kind	procedure	used_in	status	notes
 ⌂	U+2302	HOUSE	house	entity	Proc.House		planned	owner's example; BMP choice (emoji 🏠 U+1F3E0 as second choice)
 🚗	U+1F697	AUTOMOBILE	car	entity	Proc.Car		planned	owner's example; no car in the BMP (⛟ U+26DF is a truck)
 ⛟	U+26DF	BLACK TRUCK	truck	entity	Proc.Truck		planned	
-웃	U+C6C3	HANGUL SYLLABLE US	person	entity	Proc.Person		planned	owner's example; Hangul syllable often used as a stick person; alternative 🧍 U+1F9CD; LIB_MOCAP stick figures
+웃	U+C6C3	HANGUL SYLLABLE US	person	entity	Proc.Person		planned	owner's example; Hangul syllable often used as a stick person; alternative 🧍 U+1F9CD; Proc.Person + Person.* (bones = LIB_MOCAP's 25 joints; moves by math or from a LIB_MOCAP stick clip)
 ☁	U+2601	CLOUD	cloud	entity	Proc.Cloud		planned	
 ⛈	U+26C8	THUNDER CLOUD AND RAIN	storm cloud	entity	Proc.StormCloud		planned	owner's example (thunder cloud and rain)
 ☀	U+2600	BLACK SUN WITH RAYS	light	tool		LIB_ig3d	used	MAIN_UI_REUSE: light tool (lights.png); could double as sun entity

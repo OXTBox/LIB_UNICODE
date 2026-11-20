@@ -166,7 +166,7 @@ end Unicode.LastError
 
 -- the procedures written so far, one a line (the registry also names planned ones)
 function Unicode.Written
-   return "Proc.House" & return & "Proc.Car" & return & "Proc.Truck" & return & "Proc.Cloud" & return & "Proc.StormCloud"
+   return "Proc.House" & return & "Proc.Car" & return & "Proc.Truck" & return & "Proc.Cloud" & return & "Proc.StormCloud" & return & "Proc.Person"
 end Unicode.Written
 
 
@@ -404,3 +404,356 @@ function Proc.StormCloud pW
    end repeat
    return tM
 end Proc.StormCloud
+
+
+######################################################################################
+## 웃 PERSON: a stick figure with bones, by math or from a LIB_MOCAP stick clip
+######################################################################################
+-- The bones are LIB_MOCAP's 25 joints (the same names, parents and lines as its stick
+-- clips), so a clip and the math move the same figure. Joints, 1-based:
+--   1 Hips 2 Spine 3 Spine1 4 Spine2 5 Neck 6 Head 7 HeadTop_End
+--   8 LeftShoulder 9 LeftArm 10 LeftForeArm 11 LeftHand
+--   12 RightShoulder 13 RightArm 14 RightForeArm 15 RightHand
+--   16 LeftUpLeg 17 LeftLeg 18 LeftFoot 19 LeftToeBase 20 LeftToe_End
+--   21 RightUpLeg 22 RightLeg 23 RightFoot 24 RightToeBase 25 RightToe_End
+-- A pose is the joints' points, one "x,y,z" a line, in engine units: feet on y = 0, up is
+-- negative y, the figure FACES -z (like the house's door), so its left hand is at -x.
+-- The mesh: one wire line a bone, the head a ball (the only closed part).
+-- Scale: the car's. 40 wide is a 4.5 m car, so a person (1.75 m) is 0.4 * pW tall.
+
+constant kPersonEdges = "1-2 2-3 3-4 4-5 5-6 6-7 4-8 8-9 9-10 10-11 4-12 12-13 13-14 14-15 1-16 16-17 17-18 18-19 19-20 1-21 21-22 22-23 23-24 24-25"
+constant kPersonMotions = "stand,walk,run,wave"
+
+-- 웃 person standing, arms a little out. pW the size (as the car's width); 0.4 * pW tall.
+function Proc.Person pW
+   if pW is not a number or pW <= 0 then put 40 into pW
+   return Person.Mesh(Person.Pose("stand", 0, pW * 0.4), kPersonEdges, 6, 7)
+end Proc.Person
+
+function Person.Names
+   return "Hips,Spine,Spine1,Spine2,Neck,Head,HeadTop_End,LeftShoulder,LeftArm,LeftForeArm,LeftHand,RightShoulder,RightArm,RightForeArm,RightHand,LeftUpLeg,LeftLeg,LeftFoot,LeftToeBase,LeftToe_End,RightUpLeg,RightLeg,RightFoot,RightToeBase,RightToe_End"
+end Person.Names
+
+-- the bones as "a-b" words (1-based joints), the same as LIB_MOCAP's edges line
+function Person.Edges
+   return kPersonEdges
+end Person.Edges
+
+function Person.Motions
+   return kPersonMotions
+end Person.Motions
+
+-- the pose of a motion by math: pMotion stand / walk / run / wave, pPhase 0..1 through one
+-- cycle (a walk cycle is two steps), pH the height. The legs swing from the hips with the
+-- knees bent while a foot swings forward; the hips sit as high as the longer leg lets them,
+-- so the lowest foot is always on the ground and the body bobs by itself.
+function Person.Pose pMotion, pPhase, pH
+   local tA, tS, tC, tHip, tKnee, tArm, tElbow, tSide, tFore, tLean, tJ, tY, tOut, i
+   if pH is not a number or pH <= 0 then put 16 into pH
+   if pPhase is not a number then put 0 into pPhase
+   put 2 * pi * pPhase into tA
+   put sin(tA) into tS
+   put cos(tA) into tC
+   -- angles in degrees: [1] left, [2] right. Hip and arm swing forward (+), knee bend
+   -- (shin back from the thigh), elbow bend (forearm forward), side = arm raised out (0 down)
+   put 0 into tLean
+   switch pMotion
+      case "walk"
+         put 22 * tS into tHip[1]
+         put -22 * tS into tHip[2]
+         put 6 + 38 * max(0, tC) into tKnee[1]
+         put 6 + 38 * max(0, -tC) into tKnee[2]
+         put -18 * tS into tArm[1]
+         put 18 * tS into tArm[2]
+         put 18 into tElbow[1]
+         put 18 into tElbow[2]
+         put 6 into tSide[1]
+         put 6 into tSide[2]
+         put 3 into tLean
+         break
+      case "run"
+         put 34 * tS into tHip[1]
+         put -34 * tS into tHip[2]
+         put 12 + 75 * max(0, tC) into tKnee[1]
+         put 12 + 75 * max(0, -tC) into tKnee[2]
+         put -38 * tS into tArm[1]
+         put 38 * tS into tArm[2]
+         put 85 into tElbow[1]
+         put 85 into tElbow[2]
+         put 10 into tSide[1]
+         put 10 into tSide[2]
+         put 9 into tLean
+         break
+      case "wave"
+         -- the right arm up and out, its forearm waving over the head
+         put 0 into tHip[1]
+         put 0 into tHip[2]
+         put 3 into tKnee[1]
+         put 3 into tKnee[2]
+         put 0 into tArm[1]
+         put 0 into tArm[2]
+         put 10 into tElbow[1]
+         put 0 into tElbow[2]
+         put 8 into tSide[1]
+         put 140 into tSide[2]
+         put 175 + 25 * tS into tFore[2]
+         break
+      default
+         -- stand: a slow sway (breathing), the arms a little out
+         put 0 into tHip[1]
+         put 0 into tHip[2]
+         put 3 into tKnee[1]
+         put 3 into tKnee[2]
+         put 2 * tS into tArm[1]
+         put 2 * tS into tArm[2]
+         put 10 into tElbow[1]
+         put 10 into tElbow[2]
+         put 9 + tS into tSide[1]
+         put 9 + tS into tSide[2]
+         put 1.5 * tS into tLean
+   end switch
+   repeat with i = 1 to 2
+      if tFore[i] is empty then put tSide[i] into tFore[i]
+   end repeat
+   -- the legs first, in a figure 1 tall facing +z with y up (LIB_MOCAP's frame)
+   UPerson.Legs tJ, tHip, tKnee, tY
+   UPerson.Body tJ, item 2 of tJ[1], tLean
+   UPerson.Arm tJ, 1, tArm[1], tElbow[1], tSide[1], tFore[1]
+   UPerson.Arm tJ, 2, tArm[2], tElbow[2], tSide[2], tFore[2]
+   -- to the engine: turned round to face -z (x and z negated), up = -y, scaled to pH
+   repeat with i = 1 to 25
+      put UPerson.R(-item 1 of tJ[i] * pH) & comma & UPerson.R(-item 2 of tJ[i] * pH) & comma & UPerson.R(-item 3 of tJ[i] * pH) & return after tOut
+   end repeat
+   delete the last char of tOut
+   return tOut
+end Person.Pose
+
+-- the bone sizes, as parts of the height (a figure 1 tall)
+constant kThigh = 0.245
+constant kShin = 0.24
+constant kAnkle = 0.045
+constant kUpperArm = 0.165
+constant kForearm = 0.15
+
+private function UPerson.R pV
+   return round(pV, 3)
+end UPerson.R
+
+-- a bone pointing down, swung forward by pFwd degrees and out to the side by pOut degrees
+-- (pSign +1 = the left side, out = +x while facing +z); its end from pFrom, pLen long
+private function UPerson.Bone pFrom, pLen, pFwd, pOut, pSign
+   local tFwd, tSide
+   put pFwd * pi / 180 into tFwd
+   put pOut * pi / 180 into tSide
+   return (item 1 of pFrom + pLen * pSign * sin(tSide)) & comma & (item 2 of pFrom - pLen * cos(tSide) * cos(tFwd)) & comma & (item 3 of pFrom + pLen * cos(tSide) * sin(tFwd))
+end UPerson.Bone
+
+private command UPerson.Legs @pJ, pHip, pKnee, @pHipY
+   local tDrop, i, tSign, tBase, tKneeP, tAnkle
+   -- how far each leg reaches down: the hips sit on the longer one
+   put 0 into pHipY
+   repeat with i = 1 to 2
+      put kThigh * cos(pHip[i] * pi / 180) + kShin * cos((pHip[i] - pKnee[i]) * pi / 180) into tDrop[i]
+      put max(pHipY, tDrop[i] + kAnkle) into pHipY
+   end repeat
+   put "0," & (pHipY + 0.01) & ",0" into pJ[1]
+   repeat with i = 1 to 2
+      if i is 1 then put 1 into tSign
+      else put -1 into tSign
+      put (i - 1) * 5 + 16 into tBase
+      put (tSign * 0.055) & comma & pHipY & ",0" into pJ[tBase]
+      put UPerson.Bone(pJ[tBase], kThigh, pHip[i], 0, tSign) into tKneeP
+      put tKneeP into pJ[tBase + 1]
+      put UPerson.Bone(tKneeP, kShin, pHip[i] - pKnee[i], 0, tSign) into tAnkle
+      put tAnkle into pJ[tBase + 2]
+      -- the foot stays flat: toes forward along the ground (or the swinging foot's height)
+      put item 1 of tAnkle & comma & (item 2 of tAnkle - kAnkle * 0.75) & comma & (item 3 of tAnkle + 0.06) into pJ[tBase + 3]
+      put item 1 of tAnkle & comma & (item 2 of tAnkle - kAnkle) & comma & (item 3 of tAnkle + 0.11) into pJ[tBase + 4]
+   end repeat
+end UPerson.Legs
+
+-- spine, neck, head and shoulders from the hips, leaning forward pLean degrees
+private command UPerson.Body @pJ, pHipY, pLean
+   local tUp, tL, i
+   put pLean * pi / 180 into tL
+   -- heights above the hips: Spine, Spine1, Spine2, Neck, Head, HeadTop_End
+   put "0.04,0.12,0.20,0.29,0.33,0.48" into tUp
+   repeat with i = 1 to 6
+      put "0," & (pHipY + item i of tUp * cos(tL)) & comma & (item i of tUp * sin(tL)) into pJ[i + 1]
+   end repeat
+   -- the shoulder blades and shoulders, at the top of the spine (Spine2 = joint 4)
+   put 0.04 & comma & (item 2 of pJ[4] + 0.045) & comma & item 3 of pJ[4] into pJ[8]
+   put 0.10 & comma & (item 2 of pJ[4] + 0.04) & comma & item 3 of pJ[4] into pJ[9]
+   put -0.04 & comma & (item 2 of pJ[4] + 0.045) & comma & item 3 of pJ[4] into pJ[12]
+   put -0.10 & comma & (item 2 of pJ[4] + 0.04) & comma & item 3 of pJ[4] into pJ[13]
+end UPerson.Body
+
+-- arm pWhich (1 left, 2 right) from its shoulder: elbow, then the hand (wrist)
+private command UPerson.Arm @pJ, pWhich, pFwd, pElbow, pOut, pForeOut
+   local tSign, tBase, tElbowP
+   if pWhich is 1 then put 1 into tSign
+   else put -1 into tSign
+   put (pWhich - 1) * 4 + 9 into tBase
+   put UPerson.Bone(pJ[tBase], kUpperArm, pFwd, pOut, tSign) into tElbowP
+   put tElbowP into pJ[tBase + 1]
+   put UPerson.Bone(tElbowP, kForearm, pFwd + pElbow, pForeOut, tSign) into pJ[tBase + 2]
+end UPerson.Arm
+
+-- the mesh for a pose: a wire line a bone (pEdges "a-b" words, 1-based) and the head as a
+-- ball between joints pHead and pTop (the bone between them is inside it, so not drawn)
+function Person.Mesh pPose, pEdges, pHead, pTop
+   local tM, tLine, tE, a, b, tHx, tHy, tHz, tR
+   if pEdges is empty then put kPersonEdges into pEdges
+   if pHead is not a number then put 6 into pHead
+   if pTop is not a number then put 7 into pTop
+   put UProc.New() into tM
+   set the itemDel to comma
+   repeat for each line tLine in pPose
+      UProc.V tM, item 1 of tLine, item 2 of tLine, item 3 of tLine
+   end repeat
+   repeat for each word tE in pEdges
+      set the itemDel to "-"
+      put item 1 of tE into a
+      put item 2 of tE into b
+      set the itemDel to comma
+      if (a is pHead and b is pTop) or (a is pTop and b is pHead) then next repeat
+      UProc.L tM, a, b
+   end repeat
+   if pHead <= tM["count"] and pTop <= tM["count"] then
+      put (tM["vx"][pHead] + tM["vx"][pTop]) / 2 into tHx
+      put (tM["vy"][pHead] + tM["vy"][pTop]) / 2 into tHy
+      put (tM["vz"][pHead] + tM["vz"][pTop]) / 2 into tHz
+      put sqrt((tM["vx"][pHead] - tM["vx"][pTop]) ^ 2 + (tM["vy"][pHead] - tM["vy"][pTop]) ^ 2 + (tM["vz"][pHead] - tM["vz"][pTop]) ^ 2) / 2 into tR
+      UProc.Ball tM, tHx, tHy, tHz, tR
+   end if
+   return tM
+end Person.Mesh
+
+-- one cycle of a motion as pCount meshes: tF[1..pCount], tF["frames"], tF["fps"]
+-- (a walk cycle lasts 1.1 s, a run 0.7 s, a wave 1.2 s, breathing 3 s)
+function Person.Frames pMotion, pH, pCount
+   local tF, i, tSecs
+   if pCount is not a number or pCount < 1 then put 12 into pCount
+   switch pMotion
+      case "walk"
+         put 1.1 into tSecs
+         break
+      case "run"
+         put 0.7 into tSecs
+         break
+      case "wave"
+         put 1.2 into tSecs
+         break
+      default
+         put 3 into tSecs
+   end switch
+   repeat with i = 1 to pCount
+      put Person.Mesh(Person.Pose(pMotion, (i - 1) / pCount, pH), kPersonEdges, 6, 7) into tF[i]
+   end repeat
+   put pCount into tF["frames"]
+   put pCount / tSecs into tF["fps"]
+   return tF
+end Person.Frames
+
+-- how far a motion carries the figure in one cycle, so the feet do not skate (pH tall):
+-- a walk's two steps are about 0.72 of the height, a run's 1.2; stand and wave go nowhere
+function Person.Stride pMotion, pH
+   switch pMotion
+      case "walk"
+         return 0.72 * pH
+      case "run"
+         return 1.2 * pH
+      default
+         return 0
+   end switch
+end Person.Stride
+
+-- a LIB_MOCAP stick clip (the text of library/<name>/<name>_stick.txt) as meshes pH tall:
+-- tF[1..frames], tF["frames"], tF["fps"], tF["travel"] (forward per second, already
+-- scaled to pH). Walks and runs keep only their loop cycle; others up to pMax frames
+-- (empty = all), keeping every pEvery-th frame (empty = 1; fps drops to match). The clip's own joints and lines are used; the head ball sits between
+-- Head and HeadTop_End when the clip has them. Turned to face -z like the math figure.
+function Person.FromClip pText, pH, pMax, pEvery
+   local tF, tLine, tNames, tEdges, tEdges1, tE, tHead, tTop, tJoints, tFrom, tTo, tFrame, tKept, tScale, tV, i, tPose, tTravel
+   if pH is not a number or pH <= 0 then put 16 into pH
+   put 30 into tF["fps"]
+   put 0 into tTravel
+   put 1 into tFrom
+   put 999999 into tTo
+   if pEvery is not an integer or pEvery < 1 then put 1 into pEvery
+   put 0 into tFrame
+   put 0 into tKept
+   set the itemDel to comma
+   repeat for each line tLine in pText
+      if tLine is empty or char 1 of tLine is "#" then next repeat
+      switch item 1 of tLine
+         case "fps"
+            put item 2 of tLine into tF["fps"]
+            break
+         case "travel"
+            put item 2 of tLine into tTravel
+            break
+         case "cycle_travel"
+            put item 2 of tLine into tTravel
+            break
+         case "cycle"
+            put item 2 of tLine into tFrom
+            put item 3 of tLine into tTo
+            break
+         case "joints"
+            put item 2 of tLine into tJoints
+            break
+         case "names"
+            put item 2 to -1 of tLine into tNames
+            break
+         case "edges"
+            put item 2 of tLine into tEdges
+            break
+         default
+            if char 1 of tLine is "-" or char 1 of tLine is a number then
+               add 1 to tFrame
+               if tFrame < tFrom or tFrame > tTo then next repeat
+               if (tFrame - tFrom) mod pEvery is not 0 then next repeat
+               add 1 to tKept
+               if tKept > pMax and pMax is a number and pMax > 0 then next repeat
+               put tLine into tV
+               split tV by comma
+               if tJoints is not a number then put the number of items of tLine div 3 into tJoints
+               if tScale is empty then
+                  -- the clip's height: its highest joint in the first frame kept
+                  put 0 into tScale
+                  repeat with i = 1 to tJoints
+                     put max(tScale, tV[3 * i - 1]) into tScale
+                  end repeat
+                  if tScale <= 0 then put 1.75 into tScale
+                  put pH / tScale into tScale
+               end if
+               put empty into tPose
+               repeat with i = 1 to tJoints
+                  put UPerson.R(-tV[3 * i - 2] * tScale) & comma & UPerson.R(-tV[3 * i - 1] * tScale) & comma & UPerson.R(-tV[3 * i] * tScale) & return after tPose
+               end repeat
+               delete the last char of tPose
+               if tEdges1 is empty then
+                  -- 0-based "a-b" to 1-based; the head joints by name
+                  repeat for each word tE in tEdges
+                     set the itemDel to "-"
+                     put (item 1 of tE + 1) & "-" & (item 2 of tE + 1) & space after tEdges1
+                  end repeat
+                  set the itemDel to comma
+                  set the wholeMatches to true
+                  put itemOffset("Head", tNames) into tHead
+                  put itemOffset("HeadTop_End", tNames) into tTop
+               end if
+               put Person.Mesh(tPose, word 1 to -1 of tEdges1, tHead, tTop) into tF[tKept]
+            end if
+      end switch
+      set the itemDel to comma
+   end repeat
+   if pMax is a number and pMax > 0 then put min(tKept, pMax) into tKept
+   put tKept into tF["frames"]
+   if tF["fps"] is not a number then put 30 into tF["fps"]
+   put tF["fps"] / pEvery into tF["fps"]
+   if tTravel is not a number then put 0 into tTravel
+   put tTravel * tScale into tF["travel"]
+   return tF
+end Person.FromClip

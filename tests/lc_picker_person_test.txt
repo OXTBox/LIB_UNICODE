@@ -1,0 +1,74 @@
+-- the picker drops a person (웃) into a game window and moves it: the Game Player's engine
+-- (generated vibe_engine_xt3d, which has Entity.SetMesh) with no window and no raylib
+repeat for each item tS in "lib_unicode,VibeEngineXt3d,PickerTest,Play PersonTest"
+  if there is a stack tS then
+    stop using stack tS
+    delete stack tS
+  end if
+end repeat
+put "//wsl$/Ubuntu/home/igame3d/projects/" into tP
+if there is not a folder tP then put "/home/igame3d/projects/" into tP
+start using stack (tP & "LIB_UNICODE/livecode/lib_unicode.livecodescript")
+start using stack (tP & "xt3D_Raylib_Livecode_Bridge/testbench/vibe_engine_xt3d.livecodescript")
+put empty into tLog
+create stack "PickerTest"
+set the script of stack "PickerTest" to url ("binfile:" & tP & "LIB_UNICODE/livecode/unicode_picker.livecodescript")
+put "script compiles: " & (the result is empty) && the result & return after tLog
+send "Picker.Build" to stack "PickerTest"
+send "Picker.Fill entity" to stack "PickerTest"
+put "moves button: " & (there is a button "Moves" of card 1 of stack "PickerTest") & return after tLog
+create stack "Play PersonTest"
+set the width of stack "Play PersonTest" to 800
+set the height of stack "Play PersonTest" to 600
+global CenterX, CenterY, gFocalLength, gNearPlane, gCameraYaw, gCameraPitch, bPaused, bStill
+put 400 into CenterX
+put 300 into CenterY
+put 500 into gFocalLength
+put 1 into gNearPlane
+put 0 into gCameraYaw
+put -0.35 into gCameraPitch
+put false into bPaused
+put false into bStill
+set the defaultStack to "Play PersonTest"
+Engine.SetCam 0, 150, 500
+put Unicode.Char("person") into tChar
+-- the picker's moves start at walk; drop at the window's middle
+send "preOpenStack" to stack "PickerTest"
+send "Picker.DropIn" && quote & "Play PersonTest" & quote & comma & quote & tChar & quote & ", 400, 300" to stack "PickerTest"
+put field "Status" of card 1 of stack "PickerTest" into tStatus
+put "status: " & tStatus & return after tLog
+global gSceneObjects
+put the last line of gSceneObjects into tObj
+put word 2 of tObj into tId
+put "spawned on walk frame 1: " & (word 1 of tObj is "uni_person_walk_40.1") && word 1 of tObj & return after tLog
+set the defaultStack to "Play PersonTest"
+put Entity.GetPosition(tId) into tA
+wait 200 milliseconds
+send "Picker.Animate" to stack "PickerTest"
+set the defaultStack to "Play PersonTest"
+put Entity.GetPosition(tId) into tB
+put "it walked on: " & (tA is not tB) && tA && "->" && tB & return after tLog
+put line lineOffset(" " & tId & " ", " " & gSceneObjects) of gSceneObjects into tObj
+put "on a later frame: " & (word 1 of tObj is not "uni_person_walk_40.1") && word 1 of tObj & return after tLog
+-- it starts at the spot + (ring, 0): the spot is tA minus 24 on x
+put sqrt((item 1 of tB - item 1 of tA + 24)^2 + (item 3 of tB - item 3 of tA)^2) into tR
+put "on its ring (radius 0.4 * 40 * 1.5 = 24 round the spot): " & (abs(tR - 24) < 0.01) && tR & return after tLog
+-- paused: it holds still
+put true into bPaused
+wait 100 milliseconds
+send "Picker.Animate" to stack "PickerTest"
+set the defaultStack to "Play PersonTest"
+put "paused holds still: " & (Entity.GetPosition(tId) is tB) & return after tLog
+put false into bPaused
+-- take back removes it
+send "Picker.TakeBack" to stack "PickerTest"
+set the defaultStack to "Play PersonTest"
+put "take back: " & (" " & tId & " " is not in (" " & gSceneObjects & " ")) & return after tLog
+-- the other moves make their frames (dance only when LIB_MOCAP has the clip)
+repeat for each item tM in "stand,run,wave,dance"
+  send "Picker.NextMoves" to stack "PickerTest"
+  put the label of button "Moves" of card 1 of stack "PickerTest" & "; " after tMoves
+end repeat
+put "moves cycle: " & tMoves & return after tLog
+send "Picker.StopAnimate" to stack "PickerTest"
+return tLog

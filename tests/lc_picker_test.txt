@@ -27,7 +27,7 @@ put 0 into tReady
 repeat with i = 1 to tN
   if the cReady of button ("C_" & i) of card 1 of stack "PickerTest" then add 1 to tReady
 end repeat
-put "ready (house car truck cloud storm cloud) = 5: " & (tReady is 5) && tReady & return after tLog
+put "ready (house car truck cloud storm cloud person) = 6: " & (tReady is 6) && tReady & return after tLog
 send "Picker.Fill tool" to stack "PickerTest"
 put "status below the grid: " & (the top of field "Status" of card 1 of stack "PickerTest" > the bottom of field "Info" of card 1 of stack "PickerTest") & return after tLog
 -- the ground math: a camera above the ground looking down a little

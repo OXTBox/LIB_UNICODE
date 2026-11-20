@@ -70,7 +70,7 @@ A mesh from `Unicode.Build` is in the engine's own format (what `Mesh.New`/`Mesh
 back), a door drawn on the front; stands on y = 0, up is negative y; sizes follow the width.
 Picture: `preview/house_by_math.svg` (drawn by Python from the same numbers).
 
-Tests (no window): `python3 -I ~/projects/LIB_BIT/editor/tests/run_headless.py tests/lc_unicode_test.txt tests/lc_unicode_engine_test.txt`
+Tests (no window): `python3 -I ~/projects/LIB_BIT/editor/tests/run_headless.py tests/lc_unicode_test.txt tests/lc_unicode_engine_test.txt tests/lc_person_test.txt`
 
 **More procedures (19 Nov, evening):** `Proc.Car` (🚗 body, cabin, four octagon wheels standing flat
 on y = 0, front at +x), `Proc.Truck` (⛟ chassis, cargo box, cab), `Proc.Cloud` (☁ five round puffs,
@@ -86,7 +86,7 @@ GAME_Browser, any Game Player "Play <Game>" window).
 - **Entities**: drag a character into a game window and let go: its procedure builds it there,
   on the ground (y = 0) under the mouse. Where the ground is not under the mouse (a level camera),
   it lands as deep as the world's centre. A click (no drag) drops it in the middle of the front
-  game window. Dim characters are planned: no procedure written yet (웃 person).
+  game window. Dim characters are planned: no procedure written yet.
 - **Tools / Marks**: a click copies the character to the clipboard, for button labels.
 - **S M L**: built 20, 40 or 80 wide. **Take back**: removes the last thing dropped.
 - Engine 1 (Vibecode3D, XT) windows only. An xt3d window draws with raylib's own camera, so a
@@ -97,7 +97,44 @@ GAME_Browser, any Game Player "Play <Game>" window).
 Tests (no window): add `tests/lc_picker_test.txt` to the line above: the palette builds, and
 `Picker.GroundAt` gives back the world point the engine projected (4 points, two cameras).
 
+## 웃 Person: a stick figure with bones (19 Nov 2026, late)
+
+`Proc.Person pW` builds a standing stick figure **0.4 * pW tall** (the car's scale: 40 wide is a
+4.5 m car, so a 1.75 m person is 16; door-high next to a house of the same size). One wire line a
+bone, the head a ball. It **faces -z** (like the house's door), so its left hand is at -x.
+
+The bones are **LIB_MOCAP's 25 joints** (Hips, Spine ... LeftArm, LeftForeArm, LeftHand ...
+RightToe_End: the same names, parents and lines as its stick clips), so the math and a captured
+clip move the same figure.
+
+| Call | Gives |
+|---|---|
+| `Person.Pose(motion, phase, height)` | the 25 joint points, one `x,y,z` a line. Motions: `stand` (slow sway), `walk`, `run`, `wave`; phase 0..1 through one cycle |
+| `Person.Mesh(pose, edges, head, top)` | the mesh of a pose (edges empty = `Person.Edges()`; head ball between joints 6 and 7) |
+| `Person.Frames(motion, height, count)` | one cycle as meshes `[1..count]` + `["frames"]`, `["fps"]` |
+| `Person.Stride(motion, height)` | how far one cycle carries it, so the feet don't skate (walk 0.72 h, run 1.2 h) |
+| `Person.FromClip(text, height, max, every)` | a LIB_MOCAP `*_stick.txt` clip as meshes, scaled to the height, turned to face -z; walks keep only their loop cycle; `["travel"]` per second, scaled |
+| `Person.Names()` / `Person.Edges()` / `Person.Motions()` | the joints, the bones (`a-b`, 1-based), the motions |
+
+How the math moves it: legs swing from the hips with the knee bent while that foot swings
+forward; the hips sit as high as the longer leg allows, so the lowest foot is always on the ground
+and the body bobs by itself. Arms swing against the legs. Every bone keeps its length in every
+frame (tested). Picture: `preview/person_by_math.svg` (8 phases of each motion, side and front).
+
+**In the picker**: the new **웃 moves** button says what a dropped person does: stands, walks
+round, runs round (a ring 1.5 heights wide round the spot, at the speed its feet carry it),
+waves, or dances (`LIB_MOCAP/library/FreeBVH_DANCE`, 8 s at 15 fps, only when that clip is in the
+local library). Dropped people move on their own (the picker's timer swaps their frame meshes,
+needs the Game Player's `Entity.SetMesh`); a window whose game is stopped or still is drawn by
+the picker; a paused game (Escape) holds them still. Take back removes them too.
+
+Tests (no window): `tests/lc_person_test.txt` (the figure, bones in every motion, the proc_walk
+clip) and `tests/lc_picker_person_test.txt` (drop into a game window with the Game Player's
+engine, it walks round its ring, pause, take back). Not yet seen in a real window.
+
 ## Next
 
-- Person (웃) by math, or from LIB_MOCAP's stick figures.
-- Drop into xt3d windows (raylib camera).
+- Drop into xt3d windows (raylib camera): the raylib window is not a stack, so the picker needs
+  its screen rect (`xt3d_GetWindowPosition`) and a pick ray from the raylib camera.
+- People in games: `Person.FromClip` + `Person.Stride` give a game everything Amazing Couple does
+  by hand (its own clip loader could use them).

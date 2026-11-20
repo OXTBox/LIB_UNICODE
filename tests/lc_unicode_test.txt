@@ -24,7 +24,8 @@ put "house 3 door lines: " & (the number of lines of tM["lines"] is 3) & return 
 put "ridge at -50 (30 walls + 20 roof): " & (tM["vy"][9] is -50) & return after tLog
 put Proc.House() into tD
 put "default size: " & (tD["count"] is 14 and tD["vx"][2] is 20) & return after tLog
-put "person planned, gives empty: " & (Unicode.Build(Unicode.Char("person")) is empty and Unicode.LastError() contains "planned") & return after tLog
+put Unicode.Build(Unicode.Char("person")) into tPer
+put "person builds (25 joints + head ball = 51 points): " & (tPer["count"] is 51) & return after tLog
 put Unicode.Build(Unicode.Char("car"), 40) into tC
 put "car 8+8+4*16 = 80 points: " & (tC["count"] is 80) && tC["count"] & return after tLog
 put "car 6+6+4*10 = 52 faces: " & (the number of lines of tC["faces"] is 52) && the number of lines of tC["faces"] & return after tLog

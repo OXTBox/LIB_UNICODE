@@ -1,0 +1,84 @@
+-- 웃 person: the stick figure by math, its bones through motions, and a LIB_MOCAP clip
+if there is a stack "lib_unicode" then
+  stop using stack "lib_unicode"
+  delete stack "lib_unicode"
+end if
+put "//wsl$/Ubuntu/home/igame3d/projects/" into tDir
+start using stack (tDir & "LIB_UNICODE/livecode/lib_unicode.livecodescript")
+if the result is not empty then return "FAIL lib: " & the result
+put empty into tLog
+put Unicode.Char("person") into tP
+put Unicode.Build(tP, 40) into tM
+put "person builds: " & (tM["count"] is 51) && Unicode.LastError() & return after tLog
+put Proc.Person(40) into tM
+put "25 joints + 26 ball points = 51: " & (tM["count"] is 51) && tM["count"] & return after tLog
+put "23 bone lines (head bone in the ball): " & (the number of lines of tM["lines"] is 23) & return after tLog
+put "32 ball faces: " & (the number of lines of tM["faces"] is 32) & return after tLog
+put 0 into tLow
+put 0 into tHigh
+repeat with i = 1 to tM["count"]
+  put max(tLow, tM["vy"][i]) into tLow
+  put min(tHigh, tM["vy"][i]) into tHigh
+end repeat
+put "feet on the ground (lowest y 0): " & (abs(tLow) < 0.01) && tLow & return after tLog
+put "about 16 tall at size 40: " & (abs(tHigh + 16) < 1) && tHigh & return after tLog
+put "toes point -z (faces -z): " & (tM["vz"][20] < tM["vz"][18]) & return after tLog
+put "left hand at -x (facing -z): " & (tM["vx"][11] < 0) & return after tLog
+-- bones keep their length in every frame of every motion; a foot always on the ground
+put Person.Edges() into tEdges
+repeat for each item tMo in Person.Motions()
+  put true into tSame
+  put true into tGround
+  put empty into tLen
+  repeat with f = 0 to 11
+    put Person.Pose(tMo, f / 12, 100) into tPose
+    put 0 into tLow
+    repeat for each line tL in tPose
+      put max(tLow, item 2 of tL) into tLow
+    end repeat
+    if abs(tLow) > 0.05 then put false into tGround
+    put 0 into n
+    repeat for each word tE in tEdges
+      add 1 to n
+      set the itemDel to "-"
+      put item 1 of tE into a
+      put item 2 of tE into b
+      set the itemDel to comma
+      put line a of tPose into pa
+      put line b of tPose into pb
+      put sqrt((item 1 of pa - item 1 of pb)^2 + (item 2 of pa - item 2 of pb)^2 + (item 3 of pa - item 3 of pb)^2) into d
+      if tLen[n] is empty then put d into tLen[n]
+      else if abs(tLen[n] - d) > 0.05 then put false into tSame
+    end repeat
+  end repeat
+  put tMo & ": bones keep their length " & tSame & ", a foot on the ground " & tGround & return after tLog
+end repeat
+put Person.Pose("walk", 0, 100) into tA
+put Person.Pose("walk", 0.25, 100) into tB
+put "walk moves the legs: " & (line 18 of tA is not line 18 of tB) & return after tLog
+put Person.Pose("wave", 0.25, 100) into tW
+put "wave: right hand above the head: " & (item 2 of line 15 of tW < item 2 of line 6 of tW) & return after tLog
+put Person.Frames("walk", 16, 12) into tF
+put "walk frames 12, fps ~10.9: " & (tF["frames"] is 12 and round(tF["fps"], 1) is 10.9) && tF[12]["count"] & return after tLog
+put url ("file:/home/igame3d/projects/LIB_MOCAP/library/proc_walk/proc_walk_stick.txt") into tClip
+put Person.FromClip(tClip, 16) into tC
+put "clip proc_walk: " & tC["frames"] && "frames," && tC[1]["count"] && "points," && the number of lines of tC[1]["lines"] && "lines, travel" && round(tC["travel"], 2) & return after tLog
+put "clip frames = 32 and 51 points: " & (tC["frames"] is 32 and tC[1]["count"] is 51) & return after tLog
+put 0 into tHigh
+repeat with i = 1 to 25
+  put min(tHigh, tC[1]["vy"][i]) into tHigh
+end repeat
+put "clip 16 tall: " & (abs(tHigh + 16) < 0.1) && tHigh & return after tLog
+put "clip faces -z too: " & (tC[1]["vz"][20] < tC[1]["vz"][18] or tC[1]["vz"][25] < tC[1]["vz"][23]) & return after tLog
+put "registry self-check empty: " & (Unicode.Check() is empty) && Unicode.Check() & return after tLog
+-- dump poses for the preview picture (Python draws it)
+put empty into tDump
+repeat for each item tMo in Person.Motions()
+  repeat with f = 0 to 7
+    put Person.Pose(tMo, f / 8, 100) into tX
+    replace return with space in tX
+    put tMo & tab & f & tab & tX & return after tDump
+  end repeat
+end repeat
+put tDump into url ("file:/tmp/claude-1000/-home-igame3d-projects/67ceb0b2-df05-4b0c-892b-6a94e846bfdc/scratchpad/person_poses.txt")
+return tLog
