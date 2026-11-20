@@ -1,0 +1,68 @@
+-- the picker: its palette builds headless, and Picker.GroundAt undoes Engine 1's projection
+repeat for each item tS in "lib_unicode,vibe_engine_for_picker_test,unicode_picker,PickerTest"
+  if there is a stack tS then
+    stop using stack tS
+    delete stack tS
+  end if
+end repeat
+put "//wsl$/Ubuntu/home/igame3d/projects/" into tP
+if there is not a folder tP then put "/home/igame3d/projects/" into tP
+start using stack (tP & "LIB_UNICODE/livecode/lib_unicode.livecodescript")
+create stack "vibe_engine_for_picker_test"
+set the script of stack "vibe_engine_for_picker_test" to url ("binfile:" & tP & "Vibecode3D/livecode/VIBECODE3D_LIB_MCP_11_11_2026_647PM.livecodescript")
+start using stack "vibe_engine_for_picker_test"
+put empty into tLog
+-- the palette
+create stack "PickerTest"
+set the script of stack "PickerTest" to url ("binfile:" & tP & "LIB_UNICODE/livecode/unicode_picker.livecodescript")
+put "script compiles: " & (the result is empty) && the result & return after tLog
+send "Picker.Build" to stack "PickerTest"
+send "Picker.Fill entity" to stack "PickerTest"
+put 0 into tN
+repeat with i = 1 to the number of buttons of card 1 of stack "PickerTest"
+  if the short name of button i of card 1 of stack "PickerTest" begins with "C_" then add 1 to tN
+end repeat
+put "entity buttons = entities: " & (tN is the number of lines of Unicode.List("entity")) && tN & return after tLog
+put 0 into tReady
+repeat with i = 1 to tN
+  if the cReady of button ("C_" & i) of card 1 of stack "PickerTest" then add 1 to tReady
+end repeat
+put "ready (house car truck cloud storm cloud) = 5: " & (tReady is 5) && tReady & return after tLog
+send "Picker.Fill tool" to stack "PickerTest"
+put "status below the grid: " & (the top of field "Status" of card 1 of stack "PickerTest" > the bottom of field "Info" of card 1 of stack "PickerTest") & return after tLog
+-- the ground math: a camera above the ground looking down a little
+start using stack "PickerTest"
+global CenterX, CenterY, gFocalLength, gNearPlane, gCameraYaw, gCameraPitch
+put 400 into CenterX
+put 300 into CenterY
+put 500 into gFocalLength
+put 1 into gNearPlane
+put 0.15 into gCameraYaw
+put -0.35 into gCameraPitch
+Engine.SetCam 20, 150, 500
+put Mesh.Finalize(Mesh.New()) into tDummy
+put empty into tBad
+repeat for each line tW in "0 0 0" & return & "100 0 50" & return & "-80 0 -120" & return & "30 0 200"
+  -- camera point of world point p: Rcam * (p + CAM) (no scene turn, pivot 0)
+  put Mat3.Apply(Mat3.Camera(), word 1 of tW + 20, word 2 of tW + 150, word 3 of tW + 500) into tC
+  put ProjectVertex(word 1 of tC, word 2 of tC, word 3 of tC) into tS
+  if tS is empty then
+    put "behind the camera: " & tW & return after tBad
+    next repeat
+  end if
+  put Picker.GroundAt(word 1 of tS, word 2 of tS) into tG
+  if abs(item 1 of tG - word 1 of tW) + abs(item 2 of tG - word 2 of tW) + abs(item 3 of tG - word 3 of tW) > 0.01 then
+    put tW && "came back as" && tG && "(screen" && tS & ")" & return after tBad
+  end if
+end repeat
+put "ground points come back: " & (tBad is empty) & return & tBad after tLog
+-- a level camera: the ground is edge on, so it lands as deep as the world's centre
+put 0 into gCameraPitch
+put 0 into gCameraYaw
+Engine.SetCam 0, 0, 600
+put Picker.GroundAt(400, 300) into tG
+put "level camera, centre: " & (abs(item 3 of tG) < 0.01 and abs(item 1 of tG) < 0.01) && tG & return after tLog
+put Picker.GroundAt(500, 250) into tG
+put "level camera, off centre on the z = 0 plane: " & (abs(item 3 of tG) < 0.01) && tG & return after tLog
+stop using stack "PickerTest"
+return tLog

@@ -72,7 +72,32 @@ Picture: `preview/house_by_math.svg` (drawn by Python from the same numbers).
 
 Tests (no window): `python3 -I ~/projects/LIB_BIT/editor/tests/run_headless.py tests/lc_unicode_test.txt tests/lc_unicode_engine_test.txt`
 
+**More procedures (19 Nov, evening):** `Proc.Car` (🚗 body, cabin, four octagon wheels standing flat
+on y = 0, front at +x), `Proc.Truck` (⛟ chassis, cargo box, cab), `Proc.Cloud` (☁ five round puffs,
+no randomness; it floats 1.5 widths above the spot), `Proc.StormCloud` (⛈ the cloud + a zigzag bolt
+of wire lines to the ground). All are closed solids, so occlusion culling hides with them.
+
+## The picker palette (19 Nov 2026, evening)
+
+`livecode/UnicodePicker.oxtstack` (script: `livecode/unicode_picker.livecodescript`; `Picker.Build`
+makes every control again). Open it in OXT-Beyond next to a game window (HOWTO's Run, the
+GAME_Browser, any Game Player "Play <Game>" window).
+
+- **Entities**: drag a character into a game window and let go: its procedure builds it there,
+  on the ground (y = 0) under the mouse. Where the ground is not under the mouse (a level camera),
+  it lands as deep as the world's centre. A click (no drag) drops it in the middle of the front
+  game window. Dim characters are planned: no procedure written yet (웃 person).
+- **Tools / Marks**: a click copies the character to the clipboard, for button labels.
+- **S M L**: built 20, 40 or 80 wide. **Take back**: removes the last thing dropped.
+- Engine 1 (Vibecode3D, XT) windows only. An xt3d window draws with raylib's own camera, so a
+  drop there would land in the wrong spot (later).
+- Tried 19 Nov in OXT-Beyond on Simple_Test1 by calling the drop (house, car, storm cloud, take
+  back). The drag itself with the real mouse is the owner's first try.
+
+Tests (no window): add `tests/lc_picker_test.txt` to the line above: the palette builds, and
+`Picker.GroundAt` gives back the world point the engine projected (4 points, two cameras).
+
 ## Next
 
-- A picker palette: drag a character into a scene, its procedure builds the object.
-- More procedures by math: car, cloud, truck, person.
+- Person (웃) by math, or from LIB_MOCAP's stick figures.
+- Drop into xt3d windows (raylib camera).

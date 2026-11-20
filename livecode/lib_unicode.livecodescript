@@ -166,7 +166,7 @@ end Unicode.LastError
 
 -- the procedures written so far, one a line (the registry also names planned ones)
 function Unicode.Written
-   return "Proc.House"
+   return "Proc.House" & return & "Proc.Car" & return & "Proc.Truck" & return & "Proc.Cloud" & return & "Proc.StormCloud"
 end Unicode.Written
 
 
@@ -248,3 +248,159 @@ function Proc.House pW, pH, pD, pRoof
    UProc.L tM, 13, 14
    return tM
 end Proc.House
+
+
+-- a flat outline (pPts: "x y" a line, in order round the edge) pushed along z from pZ1 to pZ2:
+-- one closed part (sides + both caps), its corners added to pM
+private command UProc.ExtrudeZ @pM, pPts, pZ1, pZ2
+   local tN, tStart, tLine, k, k2, tCap1, tCap2
+   put the number of lines of pPts into tN
+   if tN < 3 then exit UProc.ExtrudeZ
+   put pM["count"] into tStart
+   repeat for each line tLine in pPts
+      UProc.V pM, word 1 of tLine, word 2 of tLine, pZ1
+   end repeat
+   repeat for each line tLine in pPts
+      UProc.V pM, word 1 of tLine, word 2 of tLine, pZ2
+   end repeat
+   repeat with k = 1 to tN
+      put (k mod tN) + 1 into k2
+      UProc.F pM, (tStart + k) && (tStart + k2) && (tStart + tN + k2) && (tStart + tN + k)
+      put (tStart + k) & space after tCap1
+      put (tStart + tN + tN + 1 - k) & space after tCap2
+   end repeat
+   UProc.F pM, word 1 to -1 of tCap1
+   UProc.F pM, word 1 to -1 of tCap2
+end UProc.ExtrudeZ
+
+-- the outline of a box side (x1..x2, y1..y2) for UProc.ExtrudeZ
+private function UProc.Rect pX1, pY1, pX2, pY2
+   return pX1 && pY1 & return & pX2 && pY1 & return & pX2 && pY2 & return & pX1 && pY2
+end UProc.Rect
+
+-- a wheel: an octagon of radius pR at x = pX, pushed along z, a flat side standing on y = 0
+private command UProc.Wheel @pM, pX, pR, pZ1, pZ2
+   local tPts, k, tA, pY
+   put 0 - pR * cos(pi / 8) into pY
+   repeat with k = 0 to 7
+      put (k * 45 + 22.5) * pi / 180 into tA
+      put (pX + pR * cos(tA)) && (pY + pR * sin(tA)) & return after tPts
+   end repeat
+   delete the last char of tPts
+   UProc.ExtrudeZ pM, tPts, pZ1, pZ2
+end UProc.Wheel
+
+-- a low ball (8 sides, 3 rings and two poles) round (pX, pY, pZ): one closed part
+private command UProc.Ball @pM, pX, pY, pZ, pR
+   local tTop, tFirst, r, k, tA, tB, tRing, tY, a, b, c, d
+   put pM["count"] + 1 into tTop
+   UProc.V pM, pX, pY - pR, pZ
+   put pM["count"] + 1 into tFirst
+   repeat with r = 1 to 3
+      put r * 45 * pi / 180 into tB  -- from the top pole down
+      put pR * sin(tB) into tRing
+      put pY - pR * cos(tB) into tY
+      repeat with k = 0 to 7
+         put k * 45 * pi / 180 into tA
+         UProc.V pM, pX + tRing * cos(tA), tY, pZ + tRing * sin(tA)
+      end repeat
+   end repeat
+   UProc.V pM, pX, pY + pR, pZ -- the bottom pole = count
+   repeat with k = 0 to 7
+      put tFirst + k into a
+      put tFirst + ((k + 1) mod 8) into b
+      UProc.F pM, tTop && b && a
+      repeat with r = 0 to 1
+         put tFirst + r * 8 + k into a
+         put tFirst + r * 8 + ((k + 1) mod 8) into b
+         put b + 8 into c
+         put a + 8 into d
+         UProc.F pM, a && b && c && d
+      end repeat
+      put tFirst + 16 + k into a
+      put tFirst + 16 + ((k + 1) mod 8) into b
+      UProc.F pM, a && b && pM["count"]
+   end repeat
+end UProc.Ball
+
+-- car (the emoji car; there is none in the BMP): a body, a cabin, four wheels.
+-- pW = its length along x, the front at +x; stands on y = 0, up is negative y.
+-- 6 closed parts: body box, cabin (a trapezoid pushed along z), 4 octagon wheels.
+function Proc.Car pW
+   local tM, L, hw, r
+   if pW is not a number or pW <= 0 then put 40 into pW
+   put pW into L
+   put L * 0.23 into hw            -- half its width (z)
+   put L * 0.13 into r             -- wheel radius
+   put UProc.New() into tM
+   UProc.ExtrudeZ tM, UProc.Rect(-L / 2, -L * 0.12, L / 2, -L * 0.36), -hw, hw
+   UProc.ExtrudeZ tM, (-L * 0.28) && (-L * 0.36) & return & (L * 0.18) && (-L * 0.36) & return \
+         & (L * 0.08) && (-L * 0.58) & return & (-L * 0.2) && (-L * 0.58), -hw * 0.85, hw * 0.85
+   UProc.Wheel tM, -L * 0.31, r, -hw - L * 0.02, -hw + L * 0.06
+   UProc.Wheel tM, L * 0.31, r, -hw - L * 0.02, -hw + L * 0.06
+   UProc.Wheel tM, -L * 0.31, r, hw - L * 0.06, hw + L * 0.02
+   UProc.Wheel tM, L * 0.31, r, hw - L * 0.06, hw + L * 0.02
+   return tM
+end Proc.Car
+
+-- truck: a cargo box behind a cab, on a chassis, four wheels. pW = its length along x,
+-- the cab at +x; stands on y = 0, up is negative y. 7 closed parts.
+function Proc.Truck pW
+   local tM, L, hw, r
+   if pW is not a number or pW <= 0 then put 40 into pW
+   put pW into L
+   put L * 0.21 into hw
+   put L * 0.12 into r
+   put UProc.New() into tM
+   UProc.ExtrudeZ tM, UProc.Rect(-L / 2, -L * 0.12, L / 2, -L * 0.18), -hw * 0.9, hw * 0.9    -- chassis
+   UProc.ExtrudeZ tM, UProc.Rect(-L / 2, -L * 0.18, L * 0.16, -L * 0.62), -hw, hw            -- cargo box
+   UProc.ExtrudeZ tM, (L * 0.2) && (-L * 0.18) & return & (L / 2) && (-L * 0.18) & return \
+         & (L / 2) && (-L * 0.36) & return & (L * 0.4) && (-L * 0.5) & return & (L * 0.2) && (-L * 0.5), -hw, hw   -- cab
+   UProc.Wheel tM, -L * 0.32, r, -hw - L * 0.02, -hw + L * 0.05
+   UProc.Wheel tM, L * 0.34, r, -hw - L * 0.02, -hw + L * 0.05
+   UProc.Wheel tM, -L * 0.32, r, hw - L * 0.05, hw + L * 0.02
+   UProc.Wheel tM, L * 0.34, r, hw - L * 0.05, hw + L * 0.02
+   return tM
+end Proc.Truck
+
+-- cloud: five round puffs in a row, the middle ones biggest, no randomness (the same cloud
+-- every time). pW = its length along x. It floats: its bottom is pW * 1.5 above y = 0, so a
+-- cloud dropped on a spot hangs in the sky over it.
+function Proc.Cloud pW
+   local tM
+   if pW is not a number or pW <= 0 then put 40 into pW
+   put UProc.New() into tM
+   UProc.CloudPuffs tM, pW, pW * 1.5
+   return tM
+end Proc.Cloud
+
+private command UProc.CloudPuffs @pM, pW, pHeight
+   local i, tR, tX, tZ
+   repeat with i = 0 to 4
+      put pW * (0.15 + 0.1 * sin(pi * i / 4)) into tR
+      put -pW * 0.34 + pW * 0.68 * i / 4 into tX
+      if i mod 2 is 0 then put pW * 0.05 into tZ
+      else put -pW * 0.05 into tZ
+      UProc.Ball pM, tX, -pHeight - tR, tZ, tR
+   end repeat
+end UProc.CloudPuffs
+
+-- storm cloud: the cloud with a zigzag bolt of lightning (wire lines) down to the ground
+function Proc.StormCloud pW
+   local tM, tFirst, k, tH
+   if pW is not a number or pW <= 0 then put 40 into pW
+   put pW * 1.5 into tH
+   put UProc.New() into tM
+   UProc.CloudPuffs tM, pW, tH
+   put tM["count"] + 1 into tFirst
+   UProc.V tM, 0, -tH, 0
+   UProc.V tM, -pW * 0.08, -tH * 0.62, 0
+   UProc.V tM, pW * 0.05, -tH * 0.58, 0
+   UProc.V tM, -pW * 0.06, -tH * 0.22, 0
+   UProc.V tM, pW * 0.07, -tH * 0.26, 0
+   UProc.V tM, 0, 0, 0
+   repeat with k = 0 to 4
+      UProc.L tM, tFirst + k, tFirst + k + 1
+   end repeat
+   return tM
+end Proc.StormCloud

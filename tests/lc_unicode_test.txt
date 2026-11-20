@@ -24,6 +24,22 @@ put "house 3 door lines: " & (the number of lines of tM["lines"] is 3) & return 
 put "ridge at -50 (30 walls + 20 roof): " & (tM["vy"][9] is -50) & return after tLog
 put Proc.House() into tD
 put "default size: " & (tD["count"] is 14 and tD["vx"][2] is 20) & return after tLog
-put "car planned, gives empty: " & (Unicode.Build(Unicode.Char("car")) is empty and Unicode.LastError() contains "planned") & return after tLog
+put "person planned, gives empty: " & (Unicode.Build(Unicode.Char("person")) is empty and Unicode.LastError() contains "planned") & return after tLog
+put Unicode.Build(Unicode.Char("car"), 40) into tC
+put "car 8+8+4*16 = 80 points: " & (tC["count"] is 80) && tC["count"] & return after tLog
+put "car 6+6+4*10 = 52 faces: " & (the number of lines of tC["faces"] is 52) && the number of lines of tC["faces"] & return after tLog
+put 0 into tLow
+repeat with i = 1 to tC["count"]
+  put max(tLow, tC["vy"][i]) into tLow
+end repeat
+put "car wheels flat on the ground (lowest y 0): " & (abs(tLow) < 0.0001) && tLow & return after tLog
+put Unicode.Build(Unicode.Char("truck"), 40) into tT
+put "truck 3*8+2*10... = 24+10... points: " & (tT["count"] is 8+8+10+64) && tT["count"] & return after tLog
+put Unicode.Build(Unicode.Char("cloud"), 40) into tCl
+put "cloud 5 balls of 26 points: " & (tCl["count"] is 130) && tCl["count"] & return after tLog
+put "cloud 5 balls of 32 faces: " & (the number of lines of tCl["faces"] is 160) & return after tLog
+put "cloud floats (bottom pole of ball 1 at -60): " & (abs(tCl["vy"][26] + 60) < 0.01) && tCl["vy"][26] & return after tLog
+put Unicode.Build(Unicode.Char("storm cloud"), 40) into tS
+put "storm cloud: cloud + 6 bolt points, 5 lines: " & (tS["count"] is 136 and the number of lines of tS["lines"] is 5) & return after tLog
 put "tool, no procedure: " & (Unicode.Build(Unicode.Char("tools menu")) is empty and Unicode.LastError() contains "no procedure") & return after tLog
 return tLog
