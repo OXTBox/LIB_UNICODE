@@ -146,3 +146,7 @@ engine, it walks round its ring, pause, take back). Not yet seen in a real windo
   one meant. Engine MOVEX/MOVEY offsets (raylib's camera does not shift) would put drops off.
 - People in games: `Person.FromClip` + `Person.Stride` give a game everything Amazing Couple does
   by hand (its own clip loader could use them).
+
+## Licence
+
+GPL-3.0 (see `LICENSE`), because the xTalk work here is built on the GPL-licensed LiveCode Community 9 engine. Copyright (c) 2026 xAction.
