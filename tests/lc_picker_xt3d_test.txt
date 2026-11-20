@@ -1,0 +1,73 @@
+-- the picker drops into the xt3d window: a stand-in for the games bench (stack
+-- "xt3dTestBenchLibMCP", image "view" NOT at the card's corner) with the Game Player's engine
+-- (generated vibe_engine_xt3d); no raylib, no window. A world point projected by the engine
+-- with the bench's view must come back where the picker drops.
+repeat for each item tS in "lib_unicode,VibeEngineXt3d,PickerTest,xt3dTestBenchLibMCP"
+  if there is a stack tS then
+    stop using stack tS
+    delete stack tS
+  end if
+end repeat
+put "//wsl$/Ubuntu/home/igame3d/projects/" into tP
+if there is not a folder tP then put "/home/igame3d/projects/" into tP
+start using stack (tP & "LIB_UNICODE/livecode/lib_unicode.livecodescript")
+start using stack (tP & "xt3D_Raylib_Livecode_Bridge/testbench/vibe_engine_xt3d.livecodescript")
+put empty into tLog
+create stack "PickerTest"
+set the script of stack "PickerTest" to url ("binfile:" & tP & "LIB_UNICODE/livecode/unicode_picker.livecodescript")
+send "Picker.Build" to stack "PickerTest"
+send "preOpenStack" to stack "PickerTest"
+create stack "xt3dTestBenchLibMCP"
+set the rect of stack "xt3dTestBenchLibMCP" to 100, 100, 900, 700
+set the script of stack "xt3dTestBenchLibMCP" to "on xbGameTick" & return & "end xbGameTick"
+create image "view" in card 1 of stack "xt3dTestBenchLibMCP"
+set the rect of image "view" of card 1 of stack "xt3dTestBenchLibMCP" to 40, 60, 680, 540
+set the defaultStack to "xt3dTestBenchLibMCP"
+Vibe.Begin the rect of image "view" of card 1 of stack "xt3dTestBenchLibMCP"
+global CenterX, CenterY, gCameraYaw, gCameraPitch, bPaused, bStill, gSceneObjects
+put 0.2 into gCameraYaw
+put -0.4 into gCameraPitch
+Engine.SetCam 10, 160, 480
+put "bench centre from its view: " & (CenterX is 360 and CenterY is 300) && CenterX & comma & CenterY & return after tLog
+-- where a world point on the ground shows in the bench (card coordinates)
+put Mesh.Finalize(Mesh.New()) into tDummy
+Render.FrameMatrices
+put Mat3.Apply(Mat3.Camera(), 60 + 10, 0 + 160, -40 + 480) into tC
+put ProjectVertex(word 1 of tC, word 2 of tC, word 3 of tC) into tS
+put "world 60,0,-40 shows at" && tS & return after tLog
+-- stopped bench (no xbGameTick waiting): nothing is dropped
+put the number of lines of gSceneObjects into tBefore
+-- another window's centre in the shared globals, as when a Game Player drew last
+put 400 into CenterX
+put 250 into CenterY
+send "Picker.DropIn" && quote & "xt3dTestBenchLibMCP" & quote & comma & quote & Unicode.Char("house") & quote & comma & word 1 of tS & comma & word 2 of tS to stack "PickerTest"
+put "stopped bench: nothing dropped: " & (the number of lines of gSceneObjects is tBefore) && field "Status" of card 1 of stack "PickerTest" & return after tLog
+-- playing: a tick waits
+send "xbGameTick" to stack "xt3dTestBenchLibMCP" in 60 seconds
+put the result into tTick
+send "Picker.DropIn" && quote & "xt3dTestBenchLibMCP" & quote & comma & quote & Unicode.Char("house") & quote & comma & word 1 of tS & comma & word 2 of tS to stack "PickerTest"
+put the last line of gSceneObjects into tObj
+set the defaultStack to "xt3dTestBenchLibMCP"
+put Entity.GetPosition(word 2 of tObj) into tG
+put "house lands on 60,0,-40: " & (abs(item 1 of tG - 60) + abs(item 2 of tG) + abs(item 3 of tG + 40) < 0.01) && tG & return after tLog
+put "the picker finds the bench under its view: " & (value("Picker.WindowAt(" & quote & "450,400" & quote & ")", stack "PickerTest") is "xt3dTestBenchLibMCP") && "; outside its view:" && (value("Picker.WindowAt(" & quote & "120,120" & quote & ")", stack "PickerTest") is empty) & return after tLog
+-- a person there walks while the bench plays
+send "Picker.DropIn" && quote & "xt3dTestBenchLibMCP" & quote & comma & quote & Unicode.Char("person") & quote & comma & word 1 of tS & comma & word 2 of tS to stack "PickerTest"
+put word 2 of the last line of gSceneObjects into tId
+set the defaultStack to "xt3dTestBenchLibMCP"
+put Entity.GetPosition(tId) into tA
+wait 150 milliseconds
+send "Picker.Animate" to stack "PickerTest"
+set the defaultStack to "xt3dTestBenchLibMCP"
+put "person walks in the xt3d window: " & (Entity.GetPosition(tId) is not tA) & return after tLog
+-- the bench game stops: the person is let go
+cancel tTick
+send "Picker.Animate" to stack "PickerTest"
+set the defaultStack to "xt3dTestBenchLibMCP"
+put Entity.GetPosition(tId) into tB
+wait 150 milliseconds
+send "Picker.Animate" to stack "PickerTest"
+set the defaultStack to "xt3dTestBenchLibMCP"
+put "bench stopped: no more steps: " & (Entity.GetPosition(tId) is tB) & return after tLog
+send "Picker.StopAnimate" to stack "PickerTest"
+return tLog

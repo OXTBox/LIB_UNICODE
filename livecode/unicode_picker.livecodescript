@@ -12,8 +12,10 @@ script "unicode_picker"
 ##              spot, waves, or dances (a LIB_MOCAP clip, when the library has it). People
 ##              move on their own; a paused game (Escape) holds them still.
 ## Game windows = the Game Player's "Play <Game>" stacks (HOWTO's Run, GAME_Browser, GL.Open)
-## in this same program; people need the Game Player's engine (Entity.SetMesh). Engine 1 (Vibecode3D, XT) only: an xt3d window draws with raylib's
-## own camera, so a drop there would land in the wrong spot (later).
+## in this same program; people need the Game Player's engine (Entity.SetMesh). Also the
+## xt3d window (the games bench "xt3dTestBenchLibMCP", e.g. HOWTO's xt3d side) while a game
+## plays in it: raylib draws the engine's own camera into its image "view", so the same ground
+## math holds there; a stopped bench draws nothing, so nothing is dropped into it.
 ## The stack holds no characters: Picker.Build makes the controls, Picker.Fill the grid.
 ######################################################################################
 
@@ -44,6 +46,7 @@ local sAnimLast    -- the milliseconds at the last Picker.Animate
 local sPersonInfo  -- sPersonInfo[prefix] = frames & tab & fps & tab & stride of meshes made
 
 constant kAnimMS = 66
+constant kBench = "xt3dTestBenchLibMCP"
 constant kDanceClip = "FreeBVH_DANCE"
 
 -------------------------------------------------------------------- open / close
@@ -168,7 +171,7 @@ end mouseUp
 -- follow the mouse with a ghost of the character until it is let go, then drop it in the
 -- game window under the mouse. Barely moved = a click: the middle of the front game window.
 command Picker.Drag pChar
-   local tStart, tLoc, tMoved, tWin, tLast
+   local tStart, tLoc, tMoved, tWin, tLast, tR
    put the screenMouseLoc into tStart
    put false into tMoved
    repeat while the mouse is down
@@ -203,7 +206,8 @@ command Picker.Drag pChar
          Picker.Status "No game window open (HOWTO's Run, or the GAME_Browser, opens one)."
          exit Picker.Drag
       end if
-      Picker.DropIn tWin, pChar, the width of stack tWin / 2, the height of stack tWin / 2
+      put Picker.ViewRect(tWin) into tR
+      Picker.DropIn tWin, pChar, (item 1 of tR + item 3 of tR) / 2, (item 2 of tR + item 4 of tR) / 2
    end if
 end Picker.Drag
 
@@ -211,7 +215,7 @@ end Picker.Drag
 function Picker.Windows
    local tS, tOut
    repeat for each line tS in the openStacks
-      if tS begins with "Play " and the mode of stack tS is not 0 and the visible of stack tS then
+      if (tS begins with "Play " or tS is kBench) and the mode of stack tS is not 0 and the visible of stack tS then
          put tS & return after tOut
       end if
    end repeat
@@ -222,13 +226,42 @@ end Picker.Windows
 -- the game window under a point on the screen (empty = none)
 function Picker.WindowAt pScreenLoc
    local tS
+   local tR
    repeat for each line tS in Picker.Windows()
-      if pScreenLoc is within the rect of stack tS then return tS
+      put Picker.ViewRect(tS) into tR
+      add the left of stack tS to item 1 of tR
+      add the top of stack tS to item 2 of tR
+      add the left of stack tS to item 3 of tR
+      add the top of stack tS to item 4 of tR
+      if pScreenLoc is within tR then return tS
    end repeat
    return empty
 end Picker.WindowAt
 
+-- the part of a window the game is drawn in (card coordinates): the whole card of a Game
+-- Player window, the image "view" of the xt3d bench
+function Picker.ViewRect pStack
+   if pStack is kBench and there is an image "view" of card 1 of stack pStack then
+      return the rect of image "view" of card 1 of stack pStack
+   end if
+   return 0, 0, the width of stack pStack, the height of stack pStack
+end Picker.ViewRect
+
+-- ready for a drop: a Game Player window always; the xt3d bench only while a game plays
+-- there (afterwards: the engine's view rect and centre are the bench's again)
+function Picker.ReadyIn pStack
+   local tErr
+   if pStack is not kBench then return true
+   if not Picker.GameDraws(pStack) then return false
+   try
+      Vibe.ApplyRect
+   catch tErr
+   end try
+   return true
+end Picker.ReadyIn
+
 function Picker.WindowName pStack
+   if pStack is kBench then return "the xt3d window"
    if the uGame of stack pStack is not empty then return the uGame of stack pStack
    return pStack
 end Picker.WindowName
@@ -238,11 +271,17 @@ command Picker.DropIn pStack, pChar, pX, pY
    global gMeshCache
    local tWas, tMesh, tBuilt, tP, tId, tErr
    put the defaultStack into tWas
+   set the defaultStack to pStack
+   if not Picker.ReadyIn(pStack) then
+      set the defaultStack to tWas
+      Picker.Status "Nothing plays in the xt3d window: run a step or a game there first."
+      exit Picker.DropIn
+   end if
    if Unicode.Procedure(pChar) is "Proc.Person" then
+      set the defaultStack to tWas
       Picker.DropPerson pStack, pChar, pX, pY
       exit Picker.DropIn
    end if
-   set the defaultStack to pStack
    try
       put "uni_" & char 3 to -1 of Unicode.Code(pChar) & "_" & sSize into tMesh
       if gMeshCache[tMesh]["count"] is empty then
@@ -309,6 +348,7 @@ command Picker.DropPerson pStack, pChar, pX, pY
    local tWas, tInfo, tP, tId, tErr, tRing, tPrefix, tFrames, tFPS, tStride
    put the defaultStack into tWas
    set the defaultStack to pStack
+   get Picker.ReadyIn(pStack)
    try
       Picker.Status "Making the person's frames..."
       put Picker.PersonMeshes(sMoves) into tInfo
@@ -400,6 +440,11 @@ on Picker.Animate
          delete variable sPeople[tId]
          next repeat
       end if
+      -- the xt3d game ended: nothing draws there any more, so these people are done
+      if tStack is kBench and not Picker.GameDraws(tStack) then
+         delete variable sPeople[tId]
+         next repeat
+      end if
       set the defaultStack to tStack
       try
          if not Entity.Exists(tId) then
@@ -421,9 +466,11 @@ on Picker.Animate
    if tLeft > 0 then Picker.StartAnimate
 end Picker.Animate
 
--- true when a window's own game loop draws it (a tick is waiting and the game is not still)
+-- true when a window's own game loop draws it: a tick is waiting (the Game Player's
+-- Player.Tick, the xt3d bench's xbGameTick) and the game is not still
 function Picker.GameDraws pStack
    global bStill
+   if pStack is kBench then return the pendingMessages contains ("xbGameTick," & the long id of stack pStack)
    if bStill is true then return false
    return the pendingMessages contains ("Player.Tick," & the long id of stack pStack)
 end Picker.GameDraws

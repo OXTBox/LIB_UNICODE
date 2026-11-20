@@ -89,12 +89,18 @@ GAME_Browser, any Game Player "Play <Game>" window).
   game window. Dim characters are planned: no procedure written yet.
 - **Tools / Marks**: a click copies the character to the clipboard, for button labels.
 - **S M L**: built 20, 40 or 80 wide. **Take back**: removes the last thing dropped.
-- Engine 1 (Vibecode3D, XT) windows only. An xt3d window draws with raylib's own camera, so a
-  drop there would land in the wrong spot (later).
+- Game Player windows (Vibecode3D, XT) and **the xt3d window** (19 Nov): the games bench
+  `xt3dTestBenchLibMCP` (HOWTO's xt3d side, view-only). Its raylib camera is the engine's own
+  (camera space, field of view from the focal length), drawn into its image "view", so the same
+  ground math holds: the picker only maps the mouse into that image and puts the engine's view
+  centre back to the bench's (`Vibe.ApplyRect`; both windows share the engine's globals).
+  Only while a game plays there (its `xbGameTick` is waiting): a stopped bench draws nothing, so
+  the picker says so instead of dropping. People there move while it plays and are let go when
+  it stops.
 - Tried 19 Nov in OXT-Beyond on Simple_Test1 by calling the drop (house, car, storm cloud, take
   back). The drag itself with the real mouse is the owner's first try.
 
-Tests (no window): add `tests/lc_picker_test.txt` to the line above: the palette builds, and
+Tests (no window): add `tests/lc_picker_test.txt`, `tests/lc_picker_person_test.txt` and `tests/lc_picker_xt3d_test.txt` to the line above: the palette builds, and
 `Picker.GroundAt` gives back the world point the engine projected (4 points, two cameras).
 
 ## 웃 Person: a stick figure with bones (19 Nov 2026, late)
@@ -134,7 +140,9 @@ engine, it walks round its ring, pause, take back). Not yet seen in a real windo
 
 ## Next
 
-- Drop into xt3d windows (raylib camera): the raylib window is not a stack, so the picker needs
-  its screen rect (`xt3d_GetWindowPosition`) and a pick ray from the raylib camera.
+- xt3d drop: tried headless only (`tests/lc_picker_xt3d_test.txt`: a stand-in bench whose view
+  is not at the card's corner; a ground point the engine projects comes back exactly). The full
+  bench (not view-only) scales its stack, which misplaces windows in OXT-Beyond: view-only is the
+  one meant. Engine MOVEX/MOVEY offsets (raylib's camera does not shift) would put drops off.
 - People in games: `Person.FromClip` + `Person.Stride` give a game everything Amazing Couple does
   by hand (its own clip loader could use them).
