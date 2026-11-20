@@ -32,3 +32,5 @@ char	code	name	meaning	kind	procedure	used_in	status	notes
 #	U+0023	NUMBER SIGN	hash: what PROMPT says when frustrated	mark			planned	PROMPT & GLAZE lore
 ▤	U+25A4	SQUARE WITH HORIZONTAL FILL	level (iGame3D XT editor)	tool			planned	candidate, replaces ⚙ there; owner to confirm
 ⤳	U+2933	WAVE ARROW POINTING DIRECTLY RIGHT	path tool (iGame3D XT editor)	tool			planned	candidate, replaces ✎ there; owner to confirm
+✦	U+2726	BLACK FOUR POINTED STAR	a rating star given (1 of 5)	mark		LIB_COMFY Player (Comfy Games)	used	pairs with ✧; ★ is taken (latest files to review)
+✧	U+2727	WHITE FOUR POINTED STAR	a rating star not given	mark		LIB_COMFY Player (Comfy Games)	used	pairs with ✦; Segoe UI Symbol on Windows
