@@ -34,3 +34,10 @@ char	code	name	meaning	kind	procedure	used_in	status	notes
 ⤳	U+2933	WAVE ARROW POINTING DIRECTLY RIGHT	path tool (iGame3D XT editor)	tool			planned	candidate, replaces ✎ there; owner to confirm
 ✦	U+2726	BLACK FOUR POINTED STAR	a rating star given (1 of 5)	mark		LIB_COMFY Player (Comfy Games)	used	pairs with ✧; ★ is taken (latest files to review)
 ✧	U+2727	WHITE FOUR POINTED STAR	a rating star not given	mark		LIB_COMFY Player (Comfy Games)	used	pairs with ✦; Segoe UI Symbol on Windows
+∿	U+223F	SINE WAVE	pressure (sound) element: energy power	mark		LIB_EMITTERS	planned	power bar glyph; ◎ is taken (camera)
+⌇	U+2307	WAVY LINE	static element: energy power	mark		LIB_EMITTERS	planned	power bar glyph
+↯	U+21AF	DOWNWARDS ZIGZAG ARROW	lightning element: energy power	mark		LIB_EMITTERS	planned	power bar glyph; ⚡ is taken (Spark)
+≋	U+224B	TRIPLE TILDE	heat element: energy power	mark		LIB_EMITTERS	planned	power bar glyph
+♨	U+2668	HOT SPRINGS	fire element: energy power	mark		LIB_EMITTERS	planned	power bar glyph
+⊛	U+229B	CIRCLED ASTERISK OPERATOR	plasma element: energy power	mark		LIB_EMITTERS	planned	power bar glyph
+✺	U+273A	SIXTEEN POINTED ASTERISK	photon element: energy power	mark		LIB_EMITTERS	planned	power bar glyph; ☀ is taken (light)
